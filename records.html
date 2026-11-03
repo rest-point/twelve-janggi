@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>로컬 기록 · twelve-janggi</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/src/experiments.css"><link rel="stylesheet" href="/src/records.css"></head>
+<body>
+  <a class="skip" href="#main">본문으로 이동</a>
+  <header class="site-header"><a class="brand" href="/" aria-label="twelve-janggi 홈"><span class="brand-mark">十<span>二</span></span><span>twelve<span class="brand-light">-janggi</span></span></a><nav aria-label="주요 메뉴"><a href="/">플레이</a><a href="/experiments">모델 대전</a><a class="nav-active" href="/records" aria-current="page">로컬 기록</a></nav></header>
+  <main id="main"><div class="intro"><h1 id="page-title">로컬 기록</h1><button id="refresh">새로고침 ↻</button></div><p id="notice" role="status" aria-live="polite" hidden></p>
+    <section id="profile-section">
+      <form id="record-filters" class="record-filters panel">
+        <label id="mode-filter">대국<select id="profile-mode" name="mode"><option value="all">전체</option><option value="pvp">플레이어 대전</option><option value="pvai">AI 대전</option></select></label>
+        <label>결과<select id="profile-outcome" name="outcome"><option value="all">전체</option><option value="win">승리</option><option value="draw">무승부</option><option value="loss">패배</option><option value="unfinished">진행 중·미완료</option></select></label>
+      </form>
+      <section class="panel record-summary" id="profile-summary" aria-live="polite"></section>
+      <section class="panel" id="history-section"><h2>대국 이력</h2><div id="history-list" class="history-list"></div><button id="more" hidden>더 보기</button></section>
+    </section>
+    <section id="record-section" class="panel" hidden aria-labelledby="replay-title">
+      <div class="panel-heading"><h2 id="replay-title">기보 재생</h2><a href="/records">로컬 기록으로</a><button id="download" disabled>기보 JSON ↓</button></div>
+      <div id="record-players" class="record-players"></div><p id="record-result" class="muted"></p>
+      <div class="record-replay-layout"><section class="record-board"><div id="red-hand" class="hand"></div><div id="replay-board" class="replay-board" role="img" aria-label="기보 게임판"></div><div id="blue-hand" class="hand"></div>
+        <div class="playback"><button id="first" aria-label="처음 수로" disabled>⏮</button><button id="prev" aria-label="이전 수" disabled>이전</button><button id="play" disabled>자동 재생</button><button id="next" aria-label="다음 수" disabled>다음</button><button id="last" aria-label="마지막 수로" disabled>⏭</button></div>
+        <label class="scrubber">현재 수<output id="ply-label">0 / 0</output><input id="ply" type="range" min="0" max="0" value="0" disabled></label><p id="move-detail" class="move-detail"></p>
+      </section><div class="table-wrap record-moves"><table><caption>수별 기보와 착수시간</caption><thead><tr><th>수</th><th>진영</th><th>착수</th><th>소요시간</th></tr></thead><tbody id="moves"></tbody></table></div></div>
+    </section>
+  </main><footer>twelve-janggi</footer><script type="module" src="/src/records.js"></script>
+</body></html>

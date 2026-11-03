@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
+
+.site-header {
+  font-family: 'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color: #242e2a;
+  background: #f7f8f4;
+  max-width: 1280px;
+  margin: auto;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  border-bottom: 1px solid #e3e6dc;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.brand-light {
+  font-weight: 500;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 39px;
+  background: var(--green);
+  border-radius: 9px 9px 12px 12px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  letter-spacing: -3px;
+  font-family: Georgia,'Times New Roman',serif;
+  box-shadow: 0 3px 0 #d6dfd3;
+}
+
+.brand-mark>span {
+  font-size: 14px;
+  transform: translateY(4px);
+  margin-left: 2px;
+}
+
+.site-header nav {
+  display: flex;
+  gap: 36px;
+  height: 100%;
+  align-items: center;
+  margin-left: 30px;
+}
+
+.site-header nav button, .site-header nav a {
+  font-size: 13px;
+  color: #7e877e;
+  position: relative;
+  padding: 39px 0;
+}
+
+.site-header nav .nav-active {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.nav-active:after {
+  position: absolute;
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  left: calc(50% - 2px);
+  bottom: 22px;
+}
+
+.header-note {
+  font-size: 11px;
+  color: #7b847b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-note i {
+  width: 5px;
+  height: 5px;
+  background: #9fae94;
+  border-radius: 50%;
+}
+
+@media(max-width:1100px){.site-header{padding:0 32px}}
+@media(max-width:850px){.header-note{display:none}.site-header{height:80px}.site-header nav button,.site-header nav a{padding:28px 0}.site-header .nav-active:after{bottom:13px}}
+@media(max-width:580px){
+  .site-header{flex-wrap:wrap;padding:16px 20px 8px;height:auto;gap:10px}
+  .brand{font-size:17px;gap:8px}.brand-mark{width:27px;height:31px;font-size:16px;border-radius:7px}.brand-mark>span{font-size:11px}
+  .site-header nav{margin:0;gap:14px;flex-basis:100%;justify-content:space-between;height:auto}
+  .site-header nav button,.site-header nav a{font-size:10px;padding:10px 0}
+  .site-header .nav-active:after{bottom:0}.site-header nav button:last-child{display:block}
+}
+@media(max-width:360px){.brand{font-size:15px;gap:6px}.brand-mark{width:25px;height:29px}.site-header nav{gap:11px}.site-header nav button,.site-header nav a{font-size:9px}}

@@ -1,0 +1,124 @@
+# Twelve Janggi
+
+팀원 모델을 같은 십이장기 규칙과 시간 조건에서 비교하는 환경이다. **Node.js 24.7 이상 · 단일 서버 · 로컬 SQLite · 동시 접속 약 5명 규모**이며 Docker나 별도 DB 서버는 사용하지 않는다. 접속 인원을 강제로 제한하지는 않는다.
+
+**모델을 가져오고 등록·검증하는 상세 방법은 [model.md](model.md)를 참고한다.**
+
+## 설치와 실행
+
+새 장비에서는 접근 권한이 있는 GitHub 계정으로 비공개 저장소를 먼저 받는다. 기존 개발 폴더에서는 다시 clone하지 않는다.
+
+```powershell
+git clone https://github.com/rest-point/twelve-janggi.git
+Set-Location twelve-janggi
+npm ci
+npm run setup
+npm start
+```
+
+[http://localhost:3000](http://localhost:3000)에 접속한다. 서버는 **127.0.0.1:3000**에만 바인딩한다. `npm ci`는 최초 또는 lockfile 변경 시 실행한다. 검증 환경은 Windows 11 / Node 26.13.0이다.
+
+기존 `.env`를 유지한다. 새 장비에서는 `.env`가 없을 때만 `.env.laptop.example`을 복사하고 `SESSION_SECRET`을 아래 생성 값으로 채운다. `npm start`는 루트 `.env`를 읽으며 프로세스 환경변수가 우선한다. 정상 종료는 **Ctrl+C**다.
+
+GitHub에는 소스·모델·테스트·설정 예시만 저장한다. 실제 `.env`, DB, 대전 기록, 백업, `node_modules`, `dist`, 터널 실행 파일은 포함하지 않는다. 새 환경의 DB는 최초 실행 시 생성한다. GitHub 업로드는 앱 호스팅과 별개이며, 온라인 대전/모델 배치는 Node 서버에서 실행한다.
+
+```powershell
+node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))"
+```
+
+| 명령 | 용도 |
+| --- | --- |
+| `npm start` | 게스트·온라인·모델 앱 실행, 3000 |
+| `npm run setup` | Node·의존성·registry·설정 점검; 실제 설정/DB를 덮어쓰지 않음 |
+| `npm test` | 전체 테스트 |
+| `npm run team:check` | 테스트·빌드·100국 평가·기보 전수 검증 |
+| `npm run model:new -- ...` / `npm run evaluate -- ...` | 모델 골격 생성 / CLI 평가; [상세 안내](model.md) |
+| `npm run dev` | 과거 CLI 파일 기보 조회, 5173; `.env`를 읽지 않음 |
+| `npm run build` / `npm run preview` | 정적 빌드 / 빌드 조회 |
+
+## 현재 기능
+
+- 가입·로그인 없이 게스트 이름으로 방 생성·참가·준비·관전·기권. 두 참가자가 준비하면 자동 시작한다.
+- 플레이어 vs 플레이어, 플레이어 vs AI, AI vs AI. 모델 대전은 사용자가 요청할 때 **100국씩** 실행한다.
+- 같은 모델 조합은 A/B 순서를 뒤집어도 100→200국으로 누적한다. 승무패·승률·평균 착수시간·각 대국의 기보/수별 시간·JSON을 조회한다.
+- 모델 소개에서 승인 모델을 선택해 특징을 공동 작성·수정한다. 새 모델 특징은 공백이다.
+- **로컬 기록**에는 온라인 사람 대국(pvp/pvai)만 표시한다. 모델 기록은 모델 대전의 모델 조합에서 확인한다.
+- 서버 심판·SQLite 영속 저장·재접속·모델 작업 재시도. 종료된 방/좌석은 정리하고 대국/기보·사용자 데이터는 보존한다.
+
+현재는 검토한 **JavaScript 모델**을 지원한다. Python/C++/Rust 직접 실행, 임의 코드/URL 웹 등록, 별도 OS 계정의 강제 격리는 아직 지원하지 않는다. [모델 지원 범위](model.md)를 확인한다.
+
+## 게임 규칙
+
+규칙 ID는 **`twelve-janggi-strict-v2`**, 구현 원본은 `src/engine.js`다. 화면은 3×4, 엔진/모델은 회전 전 4×3과 내부 인덱스 0..11을 사용한다.
+
+| 조건 | 판정 |
+| --- | --- |
+| 자기 왕을 위험에 두는 수·왕끼리 인접·장군 방치 | 불법수 |
+| 왕 직접 포획 | 불가; 왕을 잡기 전에 종국 판정 |
+| 왕이 상대 끝줄에 안전하게 진입 (`try`) | 즉시 승리 |
+| 체크메이트 | 즉시 승리 |
+| 장군 여부와 무관하게 합법수 없음 | 해당 차례 플레이어 패배 |
+| 상대 맨 끝줄에 포로 투입 | 자·장·상 모두 금지 |
+| **같은 국면 3회 반복** | **무승부**. 반복수를 금지하거나 사용자를 즉시 패배시키지 않음 |
+| 사람·모델 수당 60초 초과 / 기권 | 해당 참가자 패배 |
+| **모델 배치 256수 제한** | 다른 종국 없이 256수 도달 시 **무승부**; 사람 온라인 대국에는 이 전체 수 제한을 적용하지 않음 |
+
+반복은 초기 국면부터 세며 연속일 필요는 없다. 규칙·차례·기물 종류/소유/위치·양쪽 포로 개수가 같아야 한다. 판정 우선순위는 **안전한 왕 진입 → 체크메이트/착수 불가 → 반복 무승부**다. 대화창·관전·연결 끊김/재접속으로 온라인 시계가 멈추지 않는다.
+
+기물은 한 칸씩 이동한다. 왕은 8방향, 장은 상하좌우, 상은 대각선, 자는 앞, 후는 뒤 대각선을 제외한 6방향이다. 잡힌 후는 자로 환원된다. 자가 이동해서 상대 끝줄에 도달하면 후로 승격하며 투입으로는 승격하지 않는다. 차례 건너뛰기·합의 무승부·기물 부족 무승부·무포획 수 제한은 없다.
+
+## 모델 대전 조건
+
+웹은 **임의 오프닝 없이 첫 수부터 모델이 둔다.** 100국에서 A/B 선공을 매 판 교대해 각 **50국**, 색상/초기 차례 네 조합도 각 **25국**으로 배정한다. 수당 60초·동시 계산 2대국·최대 256수다. 동일 결정론적 대국의 반복은 독립 표본이나 최적성 증명이 아니다.
+
+모델 예외·불법수·규격 오류·시간 초과는 해당 모델 패배다. 호스트/DB 장애는 미완료·재시도로 구분하고 실패 이력도 보존한다. 모든 게스트가 조합 기록을 삭제할 수 있으며 공개 조회/진행 작업을 중단하되 내부 원본은 보존한다.
+
+CLI는 별도 연구 실행이고 기본 임의 오프닝은 4수다. 첫 수부터 비교하려면 **`--opening-plies 0`을 명시**한다. CLI 결과를 웹 조합에 자동 합산하지 않는다. [모델 검증 안내](model.md)를 따른다.
+
+## 외부 접속: Cloudflare Quick Tunnel
+
+현재 노트북에서 다른 기기의 HTTPS 접속·방 생성까지 확인했다. 집 데스크톱/강의실 Wi-Fi 검증은 별도다. 공개 접속은 필요할 때만 수동 실행한다.
+
+3000 포트 앱을 정상 종료한 뒤 공식 `cloudflared`를 PATH 또는 `artifacts/tools/cloudflared.exe`에 준비한다. 다른 위치는 `CLOUDFLARED_BIN`으로 지정한다.
+
+```powershell
+npm run tunnel
+npm run tunnel:close # 공개 터널만 종료; 로컬 앱/배치 유지
+npm run tunnel:stop  # 앱까지 정상 종료
+```
+
+도구는 **터널 URL 확보 → 이번 정확한 APP_ORIGIN 설정 → desktop 프로필 앱 실행** 순서로 동작한다. 기존 `.env`/개발 DB를 바꾸지 않고 **`data/quick-tunnel-test.sqlite`**를 사용한다. 이 DB에도 실제 사용자 기록이 있으므로 삭제하지 않는다. 종료 후 `npm start`로 개발 DB를 다시 사용한다. 터미널 Ctrl+C는 터널과 앱을 모두 종료한다.
+
+집 데스크톱은 `.env.desktop.example` 기반의 실제 `.env`와 별도 secret을 준비하고 `npm ci`/`npm run setup`을 실행한다. 먼저 `cloudflared tunnel --url http://127.0.0.1:3000`으로 주소를 얻고 다른 터미널에서 `$env:APP_ORIGIN`을 **이번 실제 HTTPS 주소**로 설정한 후 `npm start`한다.
+
+desktop 설정은 `APP_PROFILE=desktop`, `PUBLIC_ACCESS=quick-tunnel`, `SESSION_COOKIE_SECURE=true`, `TRUST_PROXY=loopback`, `API_HOST=127.0.0.1`, `API_PORT=3000`이다. Node는 로컬 HTTP, 외부는 Cloudflare HTTPS/WSS다. 공인 IP 직접 접속·포트포워딩·인바운드 개방·도메인/인증서 설정은 필요 없다. URL은 공개이며 주소가 바뀌면 새 APP_ORIGIN으로 재시작하고 새 게스트로 접속한다. [Quick Tunnel 공식 안내](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
+## 데이터와 운영
+
+| 경로 | 보존 대상 |
+| --- | --- |
+| `data/laptop-dev.sqlite` | 개발 대국·게스트·모델 작업/통계 |
+| `data/quick-tunnel-test.sqlite` | 현재 노트북 외부 접속 데이터 |
+| `data/twelve-janggi.sqlite` | 집 desktop 기본 운영 DB 경로 |
+| `artifacts/<run-id>/` | CLI config·기보·통계·`report.txt` |
+| `backups/` | 일관된 DB 사본·정리 원본 ZIP/manifest |
+
+서버가 합법수·차례·시간·결과를 확정하고 착수/국면/revision/기보/종국을 한 트랜잭션에 저장한다. 반복 이력 `positions`는 모델 입력·저장·재생·탐색에서 보존한다. 게스트는 브라우저/origin에 묶인 7일 HttpOnly 세션이며 이름만으로 좌석을 복구하지 않는다. 외부에서는 Secure 쿠키와 정확한 Origin/CSRF·WS Origin 검사를 적용한다.
+
+실행 중 DB 파일만 복사하지 않고 SQLite backup API로 일관된 사본을 만든다. 개발 DB 예시는 다음과 같다.
+
+```powershell
+node --input-type=module -e "import { DatabaseSync, backup } from 'node:sqlite'; import { mkdirSync } from 'node:fs'; mkdirSync('backups',{recursive:true}); const db=new DatabaseSync('data/laptop-dev.sqlite',{readOnly:true}); await backup(db,'backups/laptop-'+Date.now()+'.sqlite'); db.close();"
+```
+
+복구는 별도 사본에서 integrity/FK·대국/기보 합계를 확인하고 앱을 종료한 뒤 수행한다. 운영 `.env`·DB/WAL/SHM·기보·키를 배포 코드로 덮어쓰거나 여러 컴퓨터에서 동시에 DB를 열지 않는다. 비밀/DB/백업은 Git·웹 공개 대상이 아니다. 업데이트 전 정상 종료하고 기존 모델 버전과 사용자 데이터를 보존한다.
+
+## 개발·검증
+
+기존 폴더의 엔진·board-view·테스트·bench를 재사용한다. 파일 정리는 import/호출/설정/테스트 참조를 확인한 뒤 수행한다. 실행 지침은 README, 모델 상세 지침은 `model.md`로 관리한다. 새 의존성은 공식 호환성·lockfile·실제 검증을 함께 반영한다.
+
+전체 검증은 **3000 포트 앱을 정상 종료한 뒤** `npm run team:check`로 실행한다. 규칙·모델 오류/무한 루프·권한·동시 착수·시간 경계·재접속·DB 재시작·배치 복구·기보/통계를 확인한다. 화면 변경 시 브라우저에서도 확인한다.
+
+GitHub 배포 전 대전/기보·모델 조합/작업 기록과 과거 CLI 결과를 비웠다. 복구 사본은 로컬 `backups/`에만 보관하며 저장소에 올리지 않는다. 규칙 엔진·승인 모델·모델 소개 기능·영속성·재생 검증은 유지한다.
+
+2026-11-04 최종 정리 후 **92개 테스트·빌드·첫 수부터 100국 평가·전수 기보 검증**을 통과했다. 과거 브라우저 기록 전용 미사용 모듈을 제거하고, 과거 실험 파일에 의존하던 테스트를 독립 임시 데이터로 변경했다.
