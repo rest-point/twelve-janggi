@@ -5,5 +5,6 @@
   {"id":"team-greedy-v1","name":"Team Greedy","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./team-greedy-v1.mjs","config":{"thinkMs":500},"files":["./team-search-common.mjs"],"author":"team"},
   {"id":"team-minimax-v1","name":"Team Minimax + Alpha-beta","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./team-minimax-v1.mjs","config":{"depth":5,"thinkMs":500},"files":["./team-search-common.mjs"],"author":"team"},
   {"id":"team-mcts-v1","name":"Team MCTS (UCT)","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./team-mcts-v1.mjs","config":{"maxSimulations":1000,"rolloutPlies":256,"thinkMs":500},"files":["./team-search-common.mjs"],"author":"team"},
-  {"id":"stockjang-v1","name":"StockJang classical search","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./stockjang-v1.mjs","config":{"maxDepth":24,"maxNodes":40000,"maxTimeMs":1500,"quiescenceDepth":4,"tableEntries":8192},"files":[],"author":"Codex"}
+  {"id":"stockjang-v1","name":"StockJang classical search","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./stockjang-v1.mjs","config":{"maxDepth":24,"maxNodes":40000,"maxTimeMs":1500,"quiescenceDepth":4,"tableEntries":8192},"files":[],"author":"Codex"},
+  {"id":"azero-v1","name":"AlphaZero MLP + MCTS","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./azero-v1.mjs","config":{"sims":800},"files":["./azero-core.mjs","./azero-v1.bin"],"author":"thdrbgur112"}
 ]
