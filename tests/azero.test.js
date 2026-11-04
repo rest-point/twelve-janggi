@@ -74,3 +74,12 @@ test('search leaves repetition counts untouched and finds an immediate try', () 
   const pick = found.acts[found.N.indexOf(Math.max(...found.N))];
   assert.equal(pick % 12 % 4, 3);
 });
+
+test('gumbel search returns a legal pick, a normalized target, and restores repetition counts', async () => {
+  const { gumbelSearch } = await import('../train/gumbel.mjs');
+  const w = initWeights(makeRandom(9)), s = initial(0), seen = new Map([[s.key, 1]]), acts = legal(s);
+  const r = gumbelSearch(s, seen, w, acts, 64);
+  assert.ok(acts.includes(r.pick));
+  assert.ok(Math.abs(r.target.reduce((a, b) => a + b, 0) - 1) < 1e-9);
+  assert.deepEqual([...seen.values()].filter(n => n !== 0), [1]);
+});

@@ -1,11 +1,11 @@
-// node train/train.mjs --minutes 60 --workers 8 [--sims 200] [--resume file.bin]
+// node train/train.mjs --minutes 60 --workers 8 [--sims 200] [--resume file.bin] [--worker selfplay|gumbel] [--frozen file.bin] [--lr 1e-3]
 import { Worker } from 'node:worker_threads';
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { initWeights } from '../models/azero-core.mjs';
 import { backward } from './backprop.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).join(' ').split('--').filter(Boolean).map(x => x.trim().split(' ')));
-const minutes = Number(args.minutes || 60), workers = Number(args.workers || 8), sims = Number(args.sims || 200), out = args.out || 'artifacts/azero';
+const minutes = Number(args.minutes || 60), workers = Number(args.workers || 8), sims = Number(args.sims || 200), out = args.out || 'artifacts/azero', baseLr = Number(args.lr || 1e-3);
 const BATCH = 256, REUSE = 6, CAPACITY = 1_000_000, MIN_BUFFER = 5000, BETA1 = 0.9, BETA2 = 0.999;
 mkdirSync(out, { recursive: true });
 const start = initWeights();
@@ -20,19 +20,20 @@ const mirrorFeature = f => (f < 120 ? MIRROR[f / 10 | 0] * 10 + f % 10 : f);
 const mirrorAction = a => (a < 144 ? MIRROR[a / 12 | 0] * 12 + MIRROR[a % 12] : 144 + ((a - 144) / 12 | 0) * 12 + MIRROR[(a - 144) % 12]);
 
 const buffer = [];
-let write = 0, generated = 0, games = 0, plies = 0, draws = 0;
+let write = 0, generated = 0, games = 0, plies = 0, draws = 0, frozenGames = 0, frozenScore = 0;
 const pool = Array.from({ length: workers }, () => {
-  const worker = new Worker(new URL('./selfplay-worker.mjs', import.meta.url), { workerData: { weights: sab, sims } });
+  const worker = new Worker(new URL(`./${args.worker || 'selfplay'}-worker.mjs`, import.meta.url), { workerData: { weights: sab, sims, frozen: args.frozen } });
   worker.on('message', r => {
     for (const x of r.samples) { if (buffer.length < CAPACITY) buffer.push(x); else buffer[write++ % CAPACITY] = x; }
     generated += r.samples.length; games++; plies += r.plies; draws += r.draw ? 1 : 0;
+    if (r.frozenScore !== null && r.frozenScore !== undefined) { frozenGames++; frozenScore += r.frozenScore; }
   });
   worker.on('error', e => { console.error(e); process.exit(1); });
   return worker;
 });
 
 let steps = 0, pl = 0, vl = 0, lastLog = Date.now(), lastSave = Date.now(), lastGames = 0, lastPlies = 0, lastDraws = 0;
-const began = Date.now(), lr = () => { const f = (Date.now() - began) / (minutes * 60000); return f < 0.5 ? 1e-3 : f < 0.8 ? 3e-4 : 1e-4; };
+const began = Date.now(), lr = () => { const f = (Date.now() - began) / (minutes * 60000); return baseLr * (f < 0.5 ? 1 : f < 0.8 ? 0.3 : 0.1); };
 const save = name => writeFileSync(`${out}/${name}.bin`, Buffer.from(w.slice().buffer));
 function trainStep() {
   g.fill(0);
@@ -52,10 +53,10 @@ function trainStep() {
 }
 function log() {
   const dg = games - lastGames || 1;
-  const line = { min: +((Date.now() - began) / 60000).toFixed(1), games, generated, steps, policy: +(pl / (BATCH * 200 || 1)).toFixed(3), value: +(vl / (BATCH * 200 || 1)).toFixed(3), avgPlies: +((plies - lastPlies) / dg).toFixed(1), drawRate: +((draws - lastDraws) / dg).toFixed(3) };
+  const line = { min: +((Date.now() - began) / 60000).toFixed(1), games, generated, steps, policy: +(pl / (BATCH * 200 || 1)).toFixed(3), value: +(vl / (BATCH * 200 || 1)).toFixed(3), avgPlies: +((plies - lastPlies) / dg).toFixed(1), drawRate: +((draws - lastDraws) / dg).toFixed(3), vsFrozen: frozenGames ? +(frozenScore / frozenGames).toFixed(3) : null };
   console.log(JSON.stringify(line));
   appendFileSync(`${out}/log.jsonl`, JSON.stringify(line) + '\n');
-  pl = vl = 0; lastGames = games; lastPlies = plies; lastDraws = draws;
+  frozenGames = frozenScore = 0; pl = vl = 0; lastGames = games; lastPlies = plies; lastDraws = draws;
 }
 while (Date.now() - began < minutes * 60000) {
   if (buffer.length >= MIN_BUFFER && steps * BATCH < generated * REUSE) {

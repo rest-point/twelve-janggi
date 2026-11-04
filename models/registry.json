@@ -2,5 +2,6 @@
   {"id":"random-v1","name":"Seeded random","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./random.mjs","config":{},"files":[],"author":"baseline"},
   {"id":"greedy-v1","name":"One-ply greedy","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./greedy.mjs","config":{},"files":[],"author":"baseline"},
   {"id":"minimax-v1","name":"Legacy minimax normal","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./minimax.mjs","config":{"difficulty":"normal"},"files":[],"author":"baseline"},
-  {"id":"azero-v1","name":"AlphaZero MLP + MCTS","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./azero-v1.mjs","config":{"sims":800},"files":["./azero-core.mjs","./azero-v1.bin"],"author":"thdrbgur112"}
+  {"id":"azero-v1","name":"AlphaZero MLP + MCTS","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./azero-v1.mjs","config":{"sims":800},"files":["./azero-core.mjs","./azero-v1.bin"],"author":"thdrbgur112"},
+  {"id":"azero-v2","name":"AlphaZero Gumbel-trained","version":"2.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./azero-v2.mjs","config":{"sims":800},"files":["./azero-core.mjs","./azero-v2.bin"],"author":"thdrbgur112"}
 ]
