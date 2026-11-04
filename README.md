@@ -49,6 +49,8 @@ node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('b
 
 현재는 검토한 **JavaScript 모델**을 지원한다. Python/C++/Rust 직접 실행, 임의 코드/URL 웹 등록, 별도 OS 계정의 강제 격리는 아직 지원하지 않는다. [모델 지원 범위](model.md)를 확인한다.
 
+**StockJang classical search (`stockjang-v1`)**는 기존 규칙 엔진을 사용하는 반복 심화·PVS 알파베타 탐색 모델이다. 플레이어 vs AI와 모델 대전에서 선택할 수 있다. 기본 수당 탐색은 최대 1.5초/4만 노드이며, [알고리즘·반복 이력 캐시·설정·검증 안내](models/stockjang-v1.md)를 제공한다.
+
 ## 게임 규칙
 
 규칙 ID는 **`twelve-janggi-strict-v2`**, 구현 원본은 `src/engine.js`다. 화면은 3×4, 엔진/모델은 회전 전 4×3과 내부 인덱스 0..11을 사용한다.

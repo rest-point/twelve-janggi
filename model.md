@@ -2,6 +2,8 @@
 
 팀원이 만든 모델을 이 환경의 `js-v1` 계약으로 연결하고, 불변 실행 버전으로 등록한 뒤 비교하는 절차다. 설치·운영·전체 게임 규칙은 [README](README.md)를 참고한다.
 
+등록된 탐색 에이전트 **StockJang v1**의 구조·설정·검증·사용법은 [모델 설명](models/stockjang-v1.md)을 참고한다.
+
 ## 1. 가져오기 전 확인
 
 현재 직접 실행할 수 있는 것은 **검토한 JavaScript ES module(`.mjs`)**이다. 기존 예제는 `models/random.mjs`, `models/greedy.mjs`, `models/minimax.mjs`다. Python/C++/Rust 실행 파일이나 학습 프레임워크 모델은 그대로 넣을 수 없다. JS로 이식하거나 별도의 어댑터 구현·검증이 필요하다. 웹에서는 임의 코드·URL·셸 명령을 등록하지 않는다.
