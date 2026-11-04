@@ -1,5 +1,8 @@
 [
   {"id":"random-v1","name":"Seeded random","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./random.mjs","config":{},"files":[],"author":"baseline"},
   {"id":"greedy-v1","name":"One-ply greedy","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./greedy.mjs","config":{},"files":[],"author":"baseline"},
-  {"id":"minimax-v1","name":"Legacy minimax normal","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./minimax.mjs","config":{"difficulty":"normal"},"files":[],"author":"baseline"}
+  {"id":"minimax-v1","name":"Legacy minimax normal","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./minimax.mjs","config":{"difficulty":"normal"},"files":[],"author":"baseline"},
+  {"id":"team-greedy-v1","name":"Team Greedy","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./team-greedy-v1.mjs","config":{"thinkMs":500},"files":["./team-search-common.mjs"],"author":"team"},
+  {"id":"team-minimax-v1","name":"Team Minimax + Alpha-beta","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./team-minimax-v1.mjs","config":{"depth":5,"thinkMs":500},"files":["./team-search-common.mjs"],"author":"team"},
+  {"id":"team-mcts-v1","name":"Team MCTS (UCT)","version":"1.0.0","protocol":"js-v1","ruleset":"twelve-janggi-strict-v2","entry":"./team-mcts-v1.mjs","config":{"maxSimulations":1000,"rolloutPlies":256,"thinkMs":500},"files":["./team-search-common.mjs"],"author":"team"}
 ]

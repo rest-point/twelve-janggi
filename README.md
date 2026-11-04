@@ -4,6 +4,8 @@
 
 **모델을 가져오고 등록·검증하는 상세 방법은 [model.md](model.md)를 참고한다.**
 
+추가된 **Team Greedy / Team Minimax + Alpha-beta / Team MCTS (UCT)**는 서버 재시작 후 모델 선택 목록에 표시된다. 세 모델의 ID·탐색 설정·평가 함수·검증 명령은 [models/TEAM_MODELS.md](models/TEAM_MODELS.md)에 정리했다. 기존 baseline 모델은 유지한다.
+
 ## 설치와 실행
 
 새 장비에서는 접근 권한이 있는 GitHub 계정으로 비공개 저장소를 먼저 받는다. 기존 개발 폴더에서는 다시 clone하지 않는다.

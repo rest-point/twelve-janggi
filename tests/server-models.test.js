@@ -123,9 +123,10 @@ test('server restart requeues running manual matches, rejects the old attempt to
 
 test('immutable registered model versions refuse changed fingerprints',async()=>{
   await fixture(async f=>{
+    const versionsBefore=f.db.prepare('SELECT count(*) n FROM model_versions').get().n;
     f.db.prepare("UPDATE model_versions SET digest='changed' WHERE id='random-v1'").run();
     await assert.rejects(createModelCatalog(f.db),/불변 버전/);
-    assert.equal(f.db.prepare('SELECT count(*) n FROM model_versions').get().n,3);
+    assert.equal(f.db.prepare('SELECT count(*) n FROM model_versions').get().n,versionsBefore);
   });
 });
 
