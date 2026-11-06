@@ -110,7 +110,7 @@ export function createModelService(db,games,{clientFactory=m=>new ModelProcess(m
     }
   }
   return {
-    ready,tick,
+    ready,tick,getModel(id){return catalog.get(id);},
     listModels(){return catalog.list().map(m=>({...m,description:descriptions.get(m.registryId)}));},player(id){return catalog.player(id);},
     describe(id,guestId,body){return descriptions.save(catalog.get(id),guestId,body);},
     remove(id,guestId){const {gameIds,...reply}=batches.remove(id,guestId);for(const gameId of gameIds){

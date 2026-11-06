@@ -2,8 +2,8 @@ import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { RecordError } from '../experiment-store.mjs';
 
-const files = ['index.html', 'experiments.html', 'records.html', 'favicon.svg',
-  ...['app.js', 'online.js', 'engine.js', 'board-view.js', 'record-replay.js', 'replay-view.js', 'experiments.js', 'records.js', 'live.js', 'style.css', 'experiments.css', 'site-header.css', 'online.css', 'records.css'].map(f => 'src/' + f)];
+const files = ['index.html', 'experiments.html', 'analysis.html', 'records.html', 'favicon.svg',
+  ...['app.js', 'online.js', 'engine.js', 'board-view.js', 'record-replay.js', 'replay-view.js', 'experiments.js', 'records.js', 'live.js', 'style.css', 'experiments.css', 'site-header.css', 'online.css', 'records.css', 'analysis.js', 'analysis-state.js', 'analysis.css'].map(f => 'src/' + f)];
 const types = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.svg':'image/svg+xml' };
 export async function archiveRoute(pathname, store) {
   const parts = pathname.split('/').filter(Boolean);
@@ -16,6 +16,7 @@ export async function serveAsset(req, res, root, pathname, { arena = false } = {
   const asset = (arena && ['/arena', '/arena.html'].includes(pathname)) ? '/index.html'
     : ['/', '/twelve-janggi', '/index.html'].includes(pathname) ? '/index.html'
     : ['/experiments', '/experiments/', '/experiments.html'].includes(pathname) ? '/experiments.html'
+    : ['/analysis','/analysis/','/analysis.html'].includes(pathname) ? '/analysis.html'
     : ['/records','/records/','/records.html'].includes(pathname) ? '/records.html' : pathname;
   if (!files.includes(asset.slice(1))) { res.writeHead(404).end('Not found'); return; }
   const file = await realpath(path.resolve(root, '.' + asset));

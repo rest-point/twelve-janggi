@@ -7,6 +7,7 @@ import { createRooms } from './rooms.mjs';
 import { createModelService } from './model-service.mjs';
 import { createProfiles } from './profiles.mjs';
 import { createLive } from './live.mjs';
+import { createAnalysis } from './analysis.mjs';
 import { HttpError, requireThat, checkOrigin, checkTransport } from './security.mjs';
 import { createExperimentStore, RecordError } from '../scripts/experiment-store.mjs';
 import { archiveRoute, serveAsset } from '../scripts/lib/web-assets.mjs';
@@ -19,9 +20,10 @@ async function readJson(req,limit=8192) {
   try { const body = JSON.parse(Buffer.concat(chunks)); requireThat(body && typeof body === 'object' && !Array.isArray(body), 400, 'JSON 객체가 필요합니다.'); return body; }
   catch (error) { if (error instanceof HttpError) throw error; throw new HttpError(400, '잘못된 JSON입니다.'); }
 }
-export function createApplication(config, db, { now = Date.now, modelOptions } = {}) {
+export function createApplication(config, db, { now = Date.now, modelOptions, analysisOptions } = {}) {
   const guests = createGuests(db, config, now), games = createGames(db, { moveMs: config.moveMs, now });
   const models=createModelService(db,games,modelOptions);
+  const analysis=createAnalysis({getModel:id=>models.getModel(id),...analysisOptions});
   const rooms = createRooms(db,games,{now,models});
   const profiles=createProfiles(db,games,models);let live;
   const store = createExperimentStore(path.join(config.root, 'artifacts'));
@@ -87,7 +89,14 @@ export function createApplication(config, db, { now = Date.now, modelOptions } =
       const s = guests.required(req);
       if (req.method === 'POST') {
         guests.csrf(req, s);
-        const body = await readJson(req,modelDescription?16384:8192);
+        const body = await readJson(req,pathname==='/api/analysis'?32768:modelDescription?16384:8192);
+        if(pathname==='/api/analysis'){
+          const controller=new AbortController(),cancel=()=>controller.abort();
+          res.once('close',cancel);
+          try{json(200,await analysis.analyze(s.guest.id,body,{signal:controller.signal}));}
+          finally{res.off('close',cancel);}
+          return;
+        }
         if(pathname==='/api/model-matches'){json(202,models.submit(s.guest.id,body));return;}
         if(modelDelete){requireThat(Object.keys(body).length===0,422,'삭제 요청에는 추가 설정이 필요하지 않습니다.');json(200,models.remove(modelDelete[1],s.guest.id));return;}
         if(modelDescription){json(200,models.describe(modelDescription[1],s.guest.id,body));return;}
@@ -106,11 +115,11 @@ export function createApplication(config, db, { now = Date.now, modelOptions } =
       const status = error instanceof HttpError || error instanceof RecordError ? error.status : ['ENOENT','ENOTDIR'].includes(error.code) ? 404 : [5,6].includes(error.errcode) ? 503 : error instanceof URIError ? 400 : 500;
       if (status === 429 || status === 503) res.setHeader('Retry-After', status === 429 ? '900' : '1');
       if (status === 413) res.setHeader('Connection', 'close');
-      if (!res.headersSent) json(status, { error: status < 500 ? error.message : status === 503 ? '저장소가 사용 중입니다. 같은 요청 ID로 재시도하세요.' : '서버 처리에 실패했습니다.' });
+      if (!res.headersSent) json(status, { error: error instanceof HttpError || status < 500 ? error.message : status === 503 ? '저장소가 사용 중입니다. 같은 요청 ID로 재시도하세요.' : '서버 처리에 실패했습니다.' });
       else res.destroy();
     }
   });
   live=createLive(server,{config,guests,games,rooms,models,isReady:()=>initialized});
-  server.on('close', () => {clearInterval(timer);models.close();});
-  return { server, games, guests, rooms, models, profiles, live, ready };
+  server.on('close', () => {clearInterval(timer);analysis.close();models.close();});
+  return { server, games, guests, rooms, models, profiles, live, analysis, ready };
 }
