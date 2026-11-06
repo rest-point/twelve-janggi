@@ -50,6 +50,7 @@ function alphaBeta(state, depth) {
   return toEngineAction(best);
 }
 function opponent(name) {
+  if (name.startsWith('net:')) return loadPlayer(name.slice(4), workerData.sims);
   if (name === 'greedy') return s => chooseAI(s, 'easy');
   if (name === 'normal' || name === 'hard') return s => chooseAI(s, name);
   const depth = Number(name.slice(2));

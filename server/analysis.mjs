@@ -15,6 +15,7 @@ export function createAnalysis({ getModel, clientFactory = model => new ModelPro
       requireThat(Object.keys(body).every(k => ['modelId', 'position', 'actions', 'linePlies'].includes(k)), 422, '지원하지 않는 분석 설정입니다.');
       requireThat(typeof body.modelId === 'string', 422, '분석 모델을 선택하세요.');
       const model = getModel(body.modelId);
+      const maxPly = ['azero-v1', 'azero-v2'].includes(model.registryId || model.id) ? 256 : Infinity;
       const linePlies = body.linePlies ?? 3;
       requireThat(Number.isInteger(linePlies) && linePlies >= 1 && linePlies <= 5, 422, '분석 수는 1~5수여야 합니다.');
       const actions = body.actions ?? [];
@@ -26,7 +27,7 @@ export function createAnalysis({ getModel, clientFactory = model => new ModelPro
         for (const action of actions) state = applyAction(state, action, false);
       } catch (error) { throw new HttpError(422, error.message); }
       requireThat(state.winner === null, 422, state.reason || '이미 끝난 국면입니다.');
-      requireThat(!(model.registryId === 'azero-v1' && state.ply >= 256), 422, 'azero-v1은 256수 이상 국면을 지원하지 않습니다. 현재 국면으로 새 분석을 시작하세요.');
+      requireThat(state.ply < maxPly, 422, `${model.registryId || model.id}은 256수 이상 국면을 지원하지 않습니다. 현재 국면으로 새 분석을 시작하세요.`);
       requireThat(!active.has(guestId), 409, '이전 분석이 실행 중입니다. 잠시 후 다시 시도하세요.');
       requireThat(active.size < maxConcurrent, 429, '다른 국면을 분석 중입니다. 잠시 후 다시 시도하세요.');
       requireThat(!signal?.aborted, 499, '분석이 취소되었습니다.');
@@ -62,7 +63,7 @@ export function createAnalysis({ getModel, clientFactory = model => new ModelPro
           line.push({ action, side: state.turn, elapsedMs: response.elapsedMs, info });
           state = applyAction(state, action, false);
           // Preserve the valid prefix for models with an absolute ply horizon.
-          if (model.registryId === 'azero-v1' && state.ply >= 256) break;
+          if (state.ply >= maxPly) break;
         }
         return { modelId: model.id, positionKey: rootKey, action: line[0].action, line, elapsedMs: performance.now() - started,
           winner: state.winner, termination: state.termination, reason: state.reason };
