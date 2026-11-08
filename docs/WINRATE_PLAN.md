@@ -142,4 +142,10 @@ CLI의 기본 임의 오프닝은 4수이므로 본 대전에는 `--opening-plie
 - [팀 탐색 모델](https://github.com/rest-point/twelve-janggi/blob/f6f6a080fa205f49a6f5644b36554d9bd2e255bd/models/TEAM_MODELS.md), [StockJang](https://github.com/rest-point/twelve-janggi/blob/f6f6a080fa205f49a6f5644b36554d9bd2e255bd/models/stockjang-v1.md), [AlphaZero 통합 안내](https://github.com/rest-point/twelve-janggi/blob/f6f6a080fa205f49a6f5644b36554d9bd2e255bd/models/AZERO_MODEL.md): 모델 구성과 기존 검증 보고. 문서에 실린 과거 성과를 이번 실행 결과로 대신하지 않는다.
 - [웹 배치 구현](https://github.com/rest-point/twelve-janggi/blob/f6f6a080fa205f49a6f5644b36554d9bd2e255bd/server/model-matches.mjs), [웹 실행기](https://github.com/rest-point/twelve-janggi/blob/f6f6a080fa205f49a6f5644b36554d9bd2e255bd/server/model-service.mjs): 100국·2대국·시작 배정·누적·재시도.
 
-실제 실행 결과와 후보 선정은 `docs/WINRATE_RESULTS.md`에 추가한다. 본 문서의 후보 수·진행 순서는 운영 계획이며 이미 성능 향상을 확인했다는 뜻이 아니다.
+## 11. 첫 캠페인 실행 결과
+
+2026-11-08 원본 전조합 144국으로 `azero-v2`를 고정 상대, `azero-v1`을 기준 도전자로 선정했다. 설정 변경·반복 회피·초반/중반 분기·정적 평가 탐색 실험을 거쳐, 원본 v2 신경망과 새 알파베타를 결합한 `lab-neural-v2`를 만들었다. 가중치를 새로 학습하지 않았다.
+
+최종 후보를 고정한 뒤 실제 웹 100국에서 **72승 22무 6패**를 기록했다. 별도 오프닝의 같은 12개 배정에서 기준 도전자는 2승 4무 6패, 후보는 5승 4무 3패였다. 상위 보조 상대 2종에 대한 8국과 전체 133개 테스트도 완료했다. 전체 기보 재검증을 통과했고 모델 실패는 없었다.
+
+계획 중 동일 계산 시간의 알고리즘 비교와 기준 도전자 웹 100국은 실행하지 않았다. 실제 시간 차이를 보고하고, 동일 국면의 별도 12국 비교를 수행했다. 네 초기 조건에서의 개선 후보 채택으로 첫 캠페인을 마치며, 임의 오프닝에서 상대보다 우세하거나 보편적으로 최강이라는 결론은 내리지 않는다. 세부 성과·한계·실행 ID·재현 명령은 [WINRATE_RESULTS.md](WINRATE_RESULTS.md)에 기록했다.
