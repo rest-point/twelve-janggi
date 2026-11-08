@@ -6,7 +6,9 @@
 
 추가된 **Team Greedy / Team Minimax + Alpha-beta / Team MCTS (UCT)**는 서버 재시작 후 모델 선택 목록에 표시된다. 세 모델의 ID·탐색 설정·평가 함수·검증 명령은 [models/TEAM_MODELS.md](models/TEAM_MODELS.md)에 정리했다. 기존 baseline 모델은 유지한다.
 
-**AlphaZero MLP + MCTS (`azero-v1`)**와 **AlphaZero Gumbel-trained (`azero-v2`)**도 등록되어 있다. StockJang·팀 모델을 포함해 총 9개 모델을 선택할 수 있다. [구성·실행·검증 및 256수 이상 사람 대국에서의 원본 모델 한계](models/AZERO_MODEL.md)를 확인한다.
+**AlphaZero MLP + MCTS (`azero-v1`)**와 **AlphaZero Gumbel-trained (`azero-v2`)**도 등록되어 있다. StockJang·팀 모델을 포함한 원본 기준선은 9개다. [구성·실행·검증 및 256수 이상 사람 대국에서의 원본 모델 한계](models/AZERO_MODEL.md)를 확인한다.
+
+이 실험 브랜치에는 원본을 보존한 별도 `lab-*` 후보가 추가됐다. 현재 선정 후보는 **`lab-neural-v2`**로, 기존 v2 가치망과 정책 정렬을 알파베타 탐색에 결합한다. [기획안](docs/WINRATE_PLAN.md), [실제 실험 기록](docs/WINRATE_RESULTS.md), [모델 구성·한계·재현](docs/LAB_NEURAL_MODEL.md)을 확인한다. 선별 대전과 실제 웹 검증 성과를 구분하며 과거 모델 파일·설정·가중치는 변경하지 않는다.
 
 ## 설치와 실행
 
