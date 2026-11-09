@@ -40,12 +40,12 @@ test('production-sized real batches accumulate 100 then 200 games for either ord
     for(const p of done.summary.participants){assert.equal(p.wins+p.draws+p.losses,200);assert.equal(p.winRate,p.wins/200);assert.equal(p.scoreRate,(p.wins+p.draws/2)/200);}
     for(const b of done.batches){
       const jobs=f.db.prepare('SELECT j.* FROM model_batch_games bg JOIN model_matches j ON j.id=bg.match_id WHERE batch_id=? ORDER BY game_index').all(b.id);
-      assert.equal(jobs.length,100);assert.equal(jobs.filter(j=>j.a_side===0).length,50);assert.equal(jobs.filter(j=>j.first===0).length,50);
-      assert.equal(b.config.openingPlies,0);assert.equal(b.config.startPolicy,'initial-alternating-v1');
+      assert.equal(jobs.length,100);assert.equal(jobs.filter(j=>j.a_side===0).length,50);assert.equal(jobs.filter(j=>j.first===0).length,100);
+      assert.equal(b.config.openingPlies,0);assert.equal(b.config.startPolicy,'blue-first-v1');
       assert.equal(jobs.filter(j=>j.first===j.a_side).length,50);
       for(let i=0;i<100;i++){
-        assert.equal(jobs[i].first===jobs[i].a_side,i%2===0);
-        assert.deepEqual(JSON.parse(jobs[i].start_state),initialState(jobs[i].first));
+        assert.equal(jobs[i].a_side,i%2);
+        assert.deepEqual(JSON.parse(jobs[i].start_state),initialState());
         assert.deepEqual(JSON.parse(jobs[i].opening),[]);
       }
     }
@@ -53,7 +53,7 @@ test('production-sized real batches accumulate 100 then 200 games for either ord
       const record=f.app.models.record(id,index),frames=replayFrames(record),game=f.app.games.record(record.gameId);
       assert.equal(positionKey(frames.at(-1).state),record.finalKey);assert.deepEqual(frames.at(-1).state.positions,game.state.positions);
       assert.equal(record.opening.length,0);assert.equal(record.startState.ply,0);assert.equal(record.startState.positions.length,1);
-      assert.equal(record.moves[0].ply,1);assert.equal(record.moves[0].side,record.first);assert.equal(game.deadlineAt,null);
+      assert.equal(record.moves[0].ply,1);assert.equal(record.moves[0].side,0);assert.equal(game.deadlineAt,null);
     }
     assert.equal((await a.call(`/api/model-matches/${id}/games/199`)).status,200);
     assert.equal((await a.call(`/api/model-matches/${id}/games/200`)).status,404);

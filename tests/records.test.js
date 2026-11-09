@@ -76,7 +76,13 @@ test('web server provides archive routes and blocks source secrets/artifact path
       server.once('exit', () => { clearTimeout(timer); reject(new Error('Server exited')); });
       server.stdout.on('data', data => { const match = data.toString().match(/http:\/\/127\.0\.0\.1:\d+/); if (match) { clearTimeout(timer); resolve(match[0]); } });
     });
-    assert.equal((await fetch(url + '/experiments')).status, 200);
+    for (const route of ['/experiments', '/records']) {
+      const page = await fetch(url + route);
+      assert.equal(page.status, 200);
+      const html = await page.text();
+      assert.match(html, /id="ply-label"/);
+      assert.doesNotMatch(html, /id="move-detail"|최초 선공/);
+    }
     const response = await fetch(url + '/api/experiments');
     assert.equal(response.status, 200); assert.ok(Array.isArray((await response.json()).experiments));
     for (const route of ['/.env', '/package.json', '/artifacts/anything', '/scripts/server.mjs', '/api/experiments/invalid']) assert.ok((await fetch(url + route)).status >= 400, route);

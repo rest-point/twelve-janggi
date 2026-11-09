@@ -90,6 +90,23 @@ test('team descriptions are guest-editable plain text, revision checked and inde
   });
 });
 
+test('retired models are unavailable and approved models start with blank introductions',async()=>{
+  await fixture(async f=>{
+    const a=f.client();await a.enter();
+    const models=(await a.call('/api/models')).data.models;
+    const ids=new Set(models.map(model=>model.registryId));
+    const retired=['pvs-aspiration-v1','pv-puct-dfpn-v1','batch-puct-dfpn-v1','packed-gemm-puct-v1','tablebase-minimax-reply-v1'];
+    for(const id of retired) assert.equal(ids.has(id),false);
+    assert.ok(ids.has('tablebase-minimax-reply-v2')&&ids.has('packed-gemm-puct-v2'));
+    for(const {description} of models){
+      assert.deepEqual(description,{developer:'',characteristics:'',motivation:'',revision:0,updatedAt:null});
+    }
+    assert.equal(f.db.prepare('SELECT count(*) n FROM model_descriptions').get().n,0);
+    const body={developer:'',characteristics:'',motivation:'',expectedRevision:0};
+    assert.equal((await a.call('/api/models/tablebase-minimax-reply-v1/description','POST',body)).status,422);
+  });
+});
+
 test('mean thinking time is weighted by accepted moves across both seat assignments',async()=>{
   await fixture(async f=>{
     const a=f.client(),guest=(await a.enter()).data.guest.id,id=f.app.models.submit(guest,selection()).id;

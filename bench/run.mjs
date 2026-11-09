@@ -4,11 +4,11 @@ import path from 'node:path';
 import os from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
-import { ROOT, loadRegistry, makeJob, summarize, sha256 } from './common.mjs';
+import { BLUE_FIRST_POLICY, ROOT, loadRegistry, makeJob, summarize, sha256 } from './common.mjs';
 import { RULESET } from '../src/engine.js';
 
 function parseArgs(args) {
-  const options = { a: 'greedy-v1', b: 'random-v1', games: 100, concurrency: 2, seed: 20261031, moveMs: 60000, maxPlies: 256, openingPlies: 4 };
+  const options = { a: 'greedy-v1', b: 'random-v1', games: 100, concurrency: 2, seed: 20261031, moveMs: 60000, maxPlies: 256, openingPlies: 4, startPolicy: BLUE_FIRST_POLICY };
   const names = { '--a': 'a', '--b': 'b', '--games': 'games', '--concurrency': 'concurrency', '--seed': 'seed', '--move-ms': 'moveMs', '--max-plies': 'maxPlies', '--opening-plies': 'openingPlies' };
   for (let i = 0; i < args.length; i += 2) {
     const name = names[args[i]], raw = args[i + 1];

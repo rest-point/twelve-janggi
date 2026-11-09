@@ -26,6 +26,7 @@ test('simultaneous readiness starts exactly one game without owner start; old up
     assert.deepEqual(replies.map(r=>r.status),[200,200]);
     room=(await a.call(`/api/rooms/${room.id}`)).data;
     assert.equal(room.status,'playing');assert.equal(f.db.prepare('SELECT count(*) n FROM games').get().n,1);
+    assert.deepEqual(f.app.games.get(room.gameId).state,initialState());
     assert.equal((await a.call(route,'POST',body)).data.gameId,room.gameId);
     assert.equal((await b.call(route,'POST',{...body,ready:false})).status,409);
     assert.equal((await a.call(`/api/rooms/${room.id}/start`,'POST',{})).status,404);
@@ -72,6 +73,7 @@ test('player vs AI uses server referee and preserves one model process across hu
     room=(await a.call(`/api/rooms/${room.id}/ready`,'POST',{ready:true,expectedRevision:room.revision})).data;
     assert.equal(room.status,'playing');
     let game=f.app.games.get(room.gameId);
+    assert.deepEqual(game.state,initialState());assert.equal(game.participants[0].kind,'guest');
     assert.equal(game.deadlineAt-game.turnStartedAt,60000);
     for(let turn=0;turn<3;turn++){
       game=await until(()=>f.app.games.get(room.gameId),g=>g.state.turn===0||g.state.winner!==null);

@@ -64,7 +64,7 @@ function loadPlayer(path, sims) {
   };
 }
 function playOne(index, me, other, opening) {
-  let state = initialState(index % 4 < 2 ? 0 : 1);
+  let state = initialState();
   const mine = index % 2;
   for (let i = 0; i < opening; i++) {
     const acts = legalActions(state), next = applyAction(state, acts[Math.floor(Math.random() * acts.length)], false);

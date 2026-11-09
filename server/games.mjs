@@ -1,4 +1,4 @@
-import { randomInt, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { initialState, RULESET, isLegalAction, applyAction, positionKey } from '../src/engine.js';
 import { transaction } from './database.mjs';
 import { requireThat } from './security.mjs';
@@ -40,9 +40,9 @@ export function createGames(db, { moveMs = 60000, now = Date.now } = {}) {
     });
   }
   // Called by the room start transaction, so seats/game/status commit together.
-  function createInTransaction(userId,opponentId,{mode='pvp',source='room',first=randomInt(2),startState}={}) {
+  function createInTransaction(userId,opponentId,{mode='pvp',source='room',startState}={}) {
     requireThat(opponentId!==userId&&db.prepare('SELECT id FROM users WHERE id=?').get(opponentId),422,'서로 다른 참가자가 필요합니다.');
-    const id=randomUUID(),at=now(),state=startState||initialState(first);
+    const id=randomUUID(),at=now(),state=startState||initialState();
     db.prepare('INSERT INTO games(id,ruleset,initial_state,current_state,turn_started_at,deadline_at,created_at,mode,source) VALUES(?,?,?,?,?,?,?,?,?)')
       .run(id,RULESET,JSON.stringify(state),JSON.stringify(state),at,at+moveMs,at,mode,source);
     db.prepare('INSERT INTO game_participants VALUES(?,?,?)').run(id,0,userId);

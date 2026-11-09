@@ -44,7 +44,6 @@ function draw(value){
   $('replay-board').setAttribute('aria-label',`${ply}수 국면, ${frame.state.turn===0?'청':'홍'} 차례`);
   $('ply-label').textContent=`${ply} / ${frames.length-1}`;$('ply').max=frames.length-1;$('ply').value=ply;
   $('first').disabled=$('prev').disabled=ply===0;$('last').disabled=$('next').disabled=ply===frames.length-1;$('play').disabled=frames.length<2;
-  $('move-detail').textContent=moveNotation(frame.action)+(frame.opening?' · 오프닝':frame.action?' · '+ms(frame.elapsedMs):'');
   document.querySelectorAll('#moves tr').forEach((r,i)=>r.setAttribute('aria-current',String(i+1===ply)));
   const url=new URL(location.href);url.searchParams.set('ply',ply);history.replaceState(null,'',url);if(ply===frames.length-1)stop();
 }
@@ -62,7 +61,7 @@ async function loadRecord(preserve=false){
     $('moves').innerHTML=frames.map((frame,i)=>i?`<tr><td><button data-ply="${i}" aria-label="${i}수로 이동">${i}</button></td><td>${frames[i-1].state.turn===0?'청':'홍'}</td><td>${escape(moveNotation(frame.action))}</td><td>${frame.opening?'평가 제외':ms(frame.elapsedMs)}</td></tr>`:'').join('');
     $('ply').disabled=$('download').disabled=false;draw(desired);notice('');
   }catch(error){if(error.name!=='AbortError'){
-    if([401,403,404].includes(error.status)){stop();record=null;frames=[];ply=0;for(const id of ['replay-board','moves','red-hand','blue-hand','record-players','record-result'])$(id).replaceChildren();$('ply-label').textContent='0 / 0';$('move-detail').textContent='';for(const id of ['first','prev','play','next','last','ply','download'])$(id).disabled=true;}
+    if([401,403,404].includes(error.status)){stop();record=null;frames=[];ply=0;for(const id of ['replay-board','moves','red-hand','blue-hand','record-players','record-result'])$(id).replaceChildren();$('ply-label').textContent='0 / 0';for(const id of ['first','prev','play','next','last','ply','download'])$(id).disabled=true;}
     notice(error.message,true);
   }}finally{if(request===recordRequest)loadingRecord=false;}
 }

@@ -16,7 +16,7 @@ function dirichlet(n) {
 }
 function playGame() {
   w.set(shared);
-  let s = initial(Math.random() < 0.5 ? 0 : 1);
+  let s = initial();
   const seen = new Map([[s.key, 1]]), samples = [];
   // Random openings cover positions self-play alone would never reach.
   if (Math.random() < 0.25) for (let i = Math.floor(Math.random() * 7); i > 0; i--) {

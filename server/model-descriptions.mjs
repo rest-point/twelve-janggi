@@ -3,7 +3,9 @@ import { requireThat } from './security.mjs';
 
 export function createModelDescriptions(db){
   function get(registryId){return db.prepare(`SELECT developer,characteristics,motivation,revision,updated_at AS updatedAt
-    FROM model_descriptions WHERE registry_id=?`).get(registryId)||{developer:'',characteristics:'',motivation:'',revision:0,updatedAt:null};}
+    FROM model_descriptions WHERE registry_id=?`).get(registryId)||{
+      developer:'',characteristics:'',motivation:'',revision:0,updatedAt:null,
+    };}
   return {
     get,
     save(model,guestId,body){

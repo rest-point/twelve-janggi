@@ -35,6 +35,8 @@ export async function loadRegistry() {
   }
   return result;
 }
+export const BLUE_FIRST_POLICY = 'blue-first-v1';
+
 export function makeJob(index, options) {
   const blockId = Math.floor(index / 4);
   if (options.startPolicy === 'initial-alternating-v1') {
@@ -44,10 +46,12 @@ export function makeJob(index, options) {
     const first = index % 2 === 0 ? aSide : 1 - aSide;
     return { index, blockId, pairId: `${blockId}:${aSide}`, first, aSide, opening: [], startState: initialState(first) };
   }
-  const first = Math.floor((index % 4) / 2);
+  const pair = Math.floor((index % 4) / 2);
+  // Older archived runs omit the policy and used the pair to choose the starter.
+  const first = options.startPolicy === BLUE_FIRST_POLICY ? 0 : pair;
   const aSide = index % 2;
   let state = initialState(first);
-  const random = rng(seedOf(options.seed, blockId, first, 'opening'));
+  const random = rng(seedOf(options.seed, blockId, pair, 'opening'));
   const opening = [];
   for (let ply = 0; ply < options.openingPlies; ply++) {
     const candidates = legalActions(state);
@@ -61,7 +65,7 @@ export function makeJob(index, options) {
     if (!selected) break;
     opening.push(selected);
   }
-  return { index, blockId, pairId: `${blockId}:${first}`, first, aSide, opening, startState: state };
+  return { index, blockId, pairId: `${blockId}:${pair}`, first, aSide, opening, startState: state };
 }
 export function percentile(values, p) {
   if (!values.length) return null;

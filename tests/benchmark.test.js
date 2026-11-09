@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { initialState, legalActions } from '../src/engine.js';
-import { makeJob, loadRegistry, summarize, sha256 } from '../bench/common.mjs';
+import { BLUE_FIRST_POLICY, makeJob, loadRegistry, summarize, sha256 } from '../bench/common.mjs';
 import { playGame } from '../bench/referee.mjs';
 import { verifyGame } from '../bench/replay.mjs';
 import { verifyRun } from '../bench/verify-run.mjs';
@@ -10,12 +10,16 @@ import { verifyRun } from '../bench/verify-run.mjs';
 const options = { seed: 17, openingPlies: 2, moveMs: 2000, maxPlies: 32 };
 const fixture = (name, config = {}) => ({ id: name, config, entryPath: fileURLToPath(new URL('./fixtures/model.mjs', import.meta.url)) });
 
-test('schedule balances colors/first side and keeps paired opening histories', () => {
-  const jobs = Array.from({ length: 4 }, (_, i) => makeJob(i, options));
-  assert.deepEqual(jobs.map(j => [j.aSide, j.first]), [[0, 0], [1, 0], [0, 1], [1, 1]]);
+test('new schedules keep blue first and preserve paired openings and legacy schedules', () => {
+  const current = { ...options, startPolicy: BLUE_FIRST_POLICY };
+  const jobs = Array.from({ length: 4 }, (_, i) => makeJob(i, current));
+  assert.deepEqual(jobs.map(j => [j.aSide, j.first]), [[0, 0], [1, 0], [0, 0], [1, 0]]);
   assert.deepEqual(jobs[0].startState, jobs[1].startState);
   assert.deepEqual(jobs[2].startState, jobs[3].startState);
-  assert.deepEqual(jobs, Array.from({ length: 4 }, (_, i) => makeJob(i, options)));
+  assert.deepEqual(jobs.map(j => j.pairId), ['0:0', '0:0', '0:1', '0:1']);
+  assert.deepEqual(jobs, Array.from({ length: 4 }, (_, i) => makeJob(i, current)));
+  assert.deepEqual(Array.from({ length: 4 }, (_, i) => makeJob(i, options).first), [0, 0, 1, 1]);
+  assert.deepEqual(Array.from({ length: 4 }, (_, i) => makeJob(i, { ...options, startPolicy: 'initial-alternating-v1' }).first), [0, 1, 1, 0]);
 });
 
 test('registered models load; seeded baseline and completed game replays', async () => {

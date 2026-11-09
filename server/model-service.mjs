@@ -102,7 +102,7 @@ export function createModelService(db,games,{clientFactory=m=>new ModelProcess(m
       let game,token=randomUUID();
       transaction(db,()=>{
         const players=[catalog.player(j.model_a),catalog.player(j.model_b)];if(j.a_side===1)players.reverse();
-        game=games.createInTransaction(...players,{mode:'aivai',source:'manual',first:j.first,startState:j.start_state?JSON.parse(j.start_state):undefined});
+        game=games.createInTransaction(...players,{mode:'aivai',source:'manual',startState:j.start_state?JSON.parse(j.start_state):undefined});
         db.prepare("UPDATE model_matches SET status='running',game_id=?,attempt=attempt+1,attempt_token=? WHERE id=? AND status='queued'").run(game.id,token,j.id);
         db.prepare('INSERT INTO model_match_attempts VALUES(?,?,?,NULL)').run(j.id,j.attempt+1,game.id);
       });

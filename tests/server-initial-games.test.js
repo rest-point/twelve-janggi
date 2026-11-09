@@ -13,7 +13,7 @@ import { makeJob } from '../bench/common.mjs';
 import { replayFrames } from '../src/record-replay.js';
 
 const fake=()=>({ready:async()=>({elapsedMs:1}),think:async r=>({action:r.legalActions[0],elapsedMs:1}),close(){}});
-test('opening retirement preserves old games, invalidates pending work and starts a fresh alternating initial-position record',async()=>{
+test('opening retirement preserves old games, invalidates pending work and starts a fresh blue-first record',async()=>{
   const root=await mkdtemp(path.join(os.tmpdir(),'twelve-initial-upgrade-')),migrations=path.join(root,'old'),filename=path.join(root,'test.sqlite');
   await mkdir(migrations);for(const file of ['001-foundation.sql','002-guest-rooms.sql','003-model-matches.sql','004-room-lifecycle-batches.sql','005-model-management.sql'])await copyFile('db/migrations/'+file,path.join(migrations,file));
   let db=openDatabase(filename,{migrations}),models;
@@ -30,7 +30,7 @@ test('opening retirement preserves old games, invalidates pending work and start
       db.prepare('UPDATE model_matches SET first=?,a_side=?,opening=?,start_state=? WHERE id=?').run(schedule.first,schedule.aSide,JSON.stringify(schedule.opening),JSON.stringify(schedule.startState),j.id);
       if(j.game_index===3)continue;
       const players=[catalog.player(j.model_a),catalog.player(j.model_b)];if(schedule.aSide===1)players.reverse();
-      const game=games.createInTransaction(...players,{mode:'aivai',source:'manual',first:schedule.first,startState:schedule.startState});
+      const game=games.createInTransaction(...players,{mode:'aivai',source:'manual',startState:schedule.startState});
       if(j.game_index<2){games.finish(game.id,0,'model-error');completed.push({...db.prepare('SELECT * FROM games WHERE id=?').get(game.id)});}
       db.prepare('UPDATE model_matches SET status=?,game_id=?,attempt=1,attempt_token=? WHERE id=?').run(j.game_index<2?'completed':'running',game.id,j.game_index<2?null:'old-token',j.id);
       db.prepare('INSERT INTO model_match_attempts VALUES(?,?,?,NULL)').run(j.id,1,game.id);
@@ -52,7 +52,7 @@ test('opening retirement preserves old games, invalidates pending work and start
     const fresh=models.submit(guest,{...body,requestId:randomUUID()});assert.notEqual(fresh.id,old.id);assert.equal(fresh.expectedGames,4);
     for(let i=0;i<300&&models.detail(fresh.id).recordedGames<4;i++){models.tick();await new Promise(r=>setTimeout(r,10));}
     assert.equal(models.detail(fresh.id).recordedGames,4);
-    for(let i=0;i<4;i++){const record=models.record(fresh.id,i);assert.equal(record.opening.length,0);assert.equal(record.startState.ply,0);assert.equal(record.first===record.aSide,i%2===0);replayFrames(record);}
+    for(let i=0;i<4;i++){const record=models.record(fresh.id,i);assert.equal(record.opening.length,0);assert.equal(record.startState.ply,0);assert.equal(record.first,0);assert.equal(record.aSide,i%2);replayFrames(record);}
     assert.equal(db.prepare('SELECT count(*) n FROM model_series').get().n,2);
     assert.equal(db.prepare('SELECT characteristics FROM model_descriptions').get().characteristics,'retained features');
     assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0);

@@ -1,5 +1,5 @@
 import { randomInt,randomUUID } from 'node:crypto';
-import { makeJob,seedOf,percentile } from '../bench/common.mjs';
+import { BLUE_FIRST_POLICY,makeJob,seedOf,percentile } from '../bench/common.mjs';
 import { positionKey } from '../src/engine.js';
 import { transaction } from './database.mjs';
 import { requireThat } from './security.mjs';
@@ -55,7 +55,7 @@ export function createModelMatches(db,games,catalog,{batchSize=100,maxPlies=256}
         let s=db.prepare('SELECT * FROM model_series WHERE model_a=? AND model_b=? AND deleted_at IS NULL').get(chosen[0].registryId,chosen[1].registryId);
         if(!s){s={id:randomUUID(),model_a:chosen[0].registryId,model_b:chosen[1].registryId,created_at:at,updated_at:at};
           db.prepare('INSERT INTO model_series(id,model_a,model_b,created_at,updated_at) VALUES(?,?,?,?,?)').run(s.id,s.model_a,s.model_b,at,at);}
-        const config={seed,moveMs:60000,concurrency:2,openingPlies:0,startPolicy:'initial-alternating-v1',maxPlies,modelVersions:{a:chosen[0].id,b:chosen[1].id}};
+        const config={seed,moveMs:60000,concurrency:2,openingPlies:0,startPolicy:BLUE_FIRST_POLICY,maxPlies,modelVersions:{a:chosen[0].id,b:chosen[1].id}};
         db.prepare('INSERT INTO model_batches VALUES(?,?,?,?,?,?,?,?)').run(batchId,s.id,guestId,body.requestId,seed,batchSize,JSON.stringify(config),at);
         const insert=db.prepare(`INSERT INTO model_matches(id,requested_by,request_id,model_a,model_b,first,seed,status,created_at,a_side,opening,start_state)
           VALUES(?,?,?,?,?,?,?,'queued',?,?,?,?)`);

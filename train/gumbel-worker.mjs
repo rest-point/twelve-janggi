@@ -16,7 +16,7 @@ function frozenMove(s, seen, opening) {
 }
 function playGame() {
   w.set(shared);
-  let s = initial(Math.random() < 0.5 ? 0 : 1);
+  let s = initial();
   const versus = frozen && Math.random() < FROZEN_RATE, learner = Math.random() < 0.5 ? 0 : 1;
   const seen = new Map([[s.key, 1]]), samples = [];
   if (Math.random() < (versus ? 0.5 : 0.25)) for (let i = Math.floor(Math.random() * 7); i > 0; i--) {

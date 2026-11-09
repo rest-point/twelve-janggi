@@ -33,7 +33,6 @@ function clearReplay() {
   for (const id of ['first', 'prev', 'play', 'next', 'last', 'download', 'ply']) $(id).disabled = true;
   for (const id of ['moves', 'replay-board', 'red-hand', 'blue-hand']) $(id).replaceChildren();
   $('ply-label').textContent = '0 / 0'; $('game-meta').textContent = '대국을 선택하세요.';
-  $('move-detail').textContent = '초기 국면부터 포로·승격까지 재생합니다.';
 }
 function renderRuns() {
   $('run-count').textContent = `${experiments.length}${archive?'개':'조합'}`;
@@ -53,7 +52,7 @@ function renderGames() {
   const filter = $('result-filter').value;
   const games = (detail?.games || []).filter(record => filter === 'all' || (record.winner===null?false:record.winner === 'draw' ? filter === 'draw' : record.winner === record.aSide ? filter === 'a' : filter === 'b'));
   $('game-count').textContent = `${games.length} / ${detail?.games.length || 0}`;
-  $('games').innerHTML = games.length ? games.map(record => `<button class="game-card ${record.index === game?.index ? 'selected' : ''}" data-game="${record.index}"><strong>#${record.index + 1} <span class="${record.winner === 'draw' ? '' : record.winner === record.aSide ? 'blue-text' : 'red-text'}">${result(record)}</span></strong><span>${escape(reasonNames[record.termination] || record.termination || (detail.status==='error'?'계산 환경 오류':'계산 중'))}</span><small>모델 ${record.plies}수${record.openingPlies?' · 오프닝 '+record.openingPlies+'수':''} · ${ms(record.elapsedMs)}</small></button>`).join('') : '<p class="empty">해당하는 대국이 없습니다.</p>';
+  $('games').innerHTML = games.length ? games.map(record => `<button class="game-card ${record.index === game?.index ? 'selected' : ''}" data-game="${record.index}"><strong>#${record.index + 1} <span class="${record.winner === 0 ? 'blue-text' : record.winner === 1 ? 'red-text' : ''}">${result(record)}</span></strong><span>${escape(reasonNames[record.termination] || record.termination || (detail.status==='error'?'계산 환경 오류':'계산 중'))}</span><small>모델 ${record.plies}수${record.openingPlies?' · 오프닝 '+record.openingPlies+'수':''} · ${ms(record.elapsedMs)}</small></button>`).join('') : '<p class="empty">해당하는 대국이 없습니다.</p>';
 }
 function renderMoves() {
   $('moves').innerHTML = frames.map((frame, index) => index ? `<tr data-row="${index}"><td><button data-ply="${index}" aria-label="${index}수로 이동">${index}</button></td><td>${frames[index - 1].state.turn === 0 ? '청' : '홍'}</td><td>${escape(notation(frame.action))}${frame.opening ? ' <small>오프닝</small>' : ''}</td><td>${frame.opening ? '평가 제외' : ms(frame.elapsedMs)}</td></tr>` : '').join('');
@@ -69,8 +68,6 @@ function showPly(value) {
   $('last').disabled = $('next').disabled = ply === frames.length - 1;
   $('play').disabled = frames.length <= 1;
   const ending = ply === frames.length - 1 ? ` · ${result(game)}${game.termination?' / '+(reasonNames[game.termination]||game.termination):''}` : '';
-  const failed = ply === frames.length - 1 ? game.attempts?.find(attempt => !attempt.accepted&&attempt.error&&attempt.error!=='running') : null;
-  $('move-detail').textContent = `${notation(frame.action)} · ${frame.opening ? '공통 오프닝 (모델 평가 제외)' : frame.action ? `착수시간 ${ms(frame.elapsedMs)}` : `최초 선공: ${game.first === 0 ? '청' : '홍'}`}${ending}${failed ? ` · 실패 응답 대기 ${ms(failed.elapsedMs)}` : ''}`;
   $('replay-board').setAttribute('aria-label', `${ply}수 국면, ${state.turn === 0 ? '청' : '홍'} 차례${ending}`);
   document.querySelectorAll('[data-row]').forEach(row => row.classList.toggle('current', Number(row.dataset.row) === ply));
   if (ply === frames.length - 1) stop();
@@ -85,7 +82,8 @@ async function loadGame(index, initialPly = 0) {
     const replay = replayFrames(record);
     if (request !== gameRequest) return;
     game = record; frames = replay;
-    $('game-meta').textContent = `#${index + 1} · ${result(game)} · A ${game.aSide === 0 ? '청' : '홍'} / B ${game.aSide === 0 ? '홍' : '청'} · ${reasonNames[game.termination] || game.termination || (game.status==='error'?'미완료':'계산 중')}`;
+    const failed = game.attempts?.find(attempt => !attempt.accepted&&attempt.error&&attempt.error!=='running');
+    $('game-meta').textContent = `#${index + 1} · ${result(game)} · A ${game.aSide === 0 ? '청' : '홍'} / B ${game.aSide === 0 ? '홍' : '청'} · ${reasonNames[game.termination] || game.termination || (game.status==='error'?'미완료':'계산 중')}${failed ? ` · 실패 응답 대기 ${ms(failed.elapsedMs)}` : ''}`;
     $('download').disabled = $('ply').disabled = false;
     renderMoves(); renderGames(); showPly(initialPly);
     notice('');
