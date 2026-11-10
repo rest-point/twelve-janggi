@@ -4,7 +4,7 @@ import { applyAction, createPosition, initialState, isLegalAction, legalActions 
 import { denseIndex, openFullTablebase } from '../models/full-tablebase-v2.mjs';
 import { FastPosition } from '../models/pvs-aspiration-rules-v1.mjs';
 import { actionCode } from '../models/pvs-aspiration-rules-v1.mjs';
-import { analyze, classifyTablebase } from '../models/team-contender-search-v1.mjs';
+import { analyze, classifyTablebase } from '../models/team-contender-search-v2.mjs';
 
 function fixture({ turn = 0, pawn = null, hands = [[], []] } = {}) {
   const board = Array(12).fill(null);

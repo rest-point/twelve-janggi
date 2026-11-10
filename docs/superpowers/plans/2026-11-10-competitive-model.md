@@ -10,6 +10,12 @@
 
 **Spec:** docs/superpowers/specs/2026-11-10-competitive-model-design.md
 
+## Final scope update (2026-11-11)
+
+The user narrowed the deliverable to one new contender model and said it need not win. Keep `team-contender-v2` as the only model added by this branch. The earlier imported `lab-neural-v2` benchmark baseline and the superseded `team-contender-v1` were useful during screening and debugging but are removed from the final registry and source tree. Preserve every model registration that existed on `origin/temp`. Do not merge or push this work to `main`.
+
+The four-game screens completed against all four opponents. The 100-game batches against `azero-v2` and `packed-gemm-puct-v2` completed and were replay-verified. The other two 100-game batches were interrupted at the scope update and are incomplete; exclude them from scored results. The focused v2 tests and build remain the required final checks; the full suite had already passed before this final scope cleanup.
+
 ## Global Constraints
 
 - Ruleset: twelve-janggi-strict-v2; model protocol: js-v1 with named think(request).

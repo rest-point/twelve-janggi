@@ -7,12 +7,12 @@ import { initialState, isLegalAction, legalActions } from '../src/engine.js';
 import { ModelProcess } from '../server/model-process.mjs';
 
 const priorIds = ['random-v1', 'greedy-v1', 'minimax-v1', 'team-greedy-v1', 'team-minimax-v1', 'team-mcts-v1',
-  'stockjang-v1', 'azero-v1', 'azero-v2', 'packed-gemm-puct-v2', 'tablebase-minimax-reply-v2', 'lab-neural-v2', 'team-contender-v1'];
+  'stockjang-v1', 'azero-v1', 'azero-v2', 'packed-gemm-puct-v2', 'tablebase-minimax-reply-v2'];
 const sharedFiles = ['./azero-core.mjs', './azero-v2.bin',
   './full-tablebase-v2.mjs', './pvs-aspiration-rules-v1.mjs', './pvs-aspiration-v1.mjs', './dfpn-proof-v1.mjs',
   ...Array.from({ length: 8 }, (_, index) => `./full-tablebase/strict-v2-${index}.tjb`)];
 const declaredFiles = version => [`./team-contender-search-${version}.mjs`, ...sharedFiles];
-const previousRegistryHash = '51ac51bb11d08f3a1dd9c844321da1fa9cf7abed46a6f3efe1719cd557411789';
+const previousRegistryHash = 'b4852e4aa7ce48cea59fc3df9a25a15035e87196dbc687694f9b574018973136';
 
 test('team-contender registration preserves existing models and declares every worker dependency', async () => {
   const registry = await loadRegistry(), ids = registry.map(model => model.id);
@@ -22,11 +22,8 @@ test('team-contender registration preserves existing models and declares every w
   assert.equal(new Set(ids).size, ids.length);
   for (const id of priorIds) assert.ok(ids.includes(id), `Existing model ${id} was removed`);
   assert.equal(ids.length, priorIds.length + 1);
-  assert.equal(createHash('sha256').update(JSON.stringify(sourceRegistry.filter(candidate => !['team-contender-v1', 'team-contender-v2'].includes(candidate.id)))).digest('hex'),
+  assert.equal(createHash('sha256').update(JSON.stringify(sourceRegistry.filter(candidate => candidate.id !== 'team-contender-v2'))).digest('hex'),
     previousRegistryHash, 'Existing model registrations changed');
-  const v1 = registry.find(candidate => candidate.id === 'team-contender-v1');
-  assert.deepEqual(v1.config, { maxDepth: 32, maxNodes: 160000, maxTimeMs: 360, tablebaseMaxMs: 32,
-    quiescenceDepth: 5, tableEntries: 8192, rootProofNodes: 1000, proofDepth: 12 });
   assert.equal(model.name, 'Team Repetition-Safe Full Tablebase Search');
   assert.equal(model.version, '2.0.0');
   assert.equal(model.protocol, 'js-v1');
@@ -44,7 +41,7 @@ test('team-contender registration preserves existing models and declares every w
 
 test('team contenders return legal moves for both starters and safely reuse production Workers', async () => {
   const registry = await loadRegistry();
-  for (const id of ['team-contender-v1', 'team-contender-v2']) {
+  for (const id of ['team-contender-v2']) {
     const model = registry.find(candidate => candidate.id === id);
     const client = new ModelProcess(model);
     try {
