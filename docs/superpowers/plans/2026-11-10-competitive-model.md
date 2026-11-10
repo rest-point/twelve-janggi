@@ -149,25 +149,25 @@ Expected: focused search tests pass and only the search component and tests are 
 - Initial config: maxDepth 32, maxNodes 160000, maxTimeMs 360, tablebaseMaxMs 32, quiescenceDepth 5, tableEntries 8192, rootProofNodes 1000, proofDepth 12; keep all search inside the 360 ms cap.
 - Manifest files include team-contender-search-v1.mjs, azero-core.mjs, azero-v2.bin, full-tablebase-v2.mjs, pvs-aspiration-rules-v1.mjs, pvs-aspiration-v1.mjs, dfpn-proof-v1.mjs, and strict-v2-0.tjb through strict-v2-7.tjb.
 
-- [ ] **Step 1: Write failing registry and ModelProcess tests**
+- [x] **Step 1: Write failing registry and ModelProcess tests**
   - Assert ID uniqueness, all imported assets are declared, all eight shards exist, and previous registry entries are unchanged.
   - Run a real ModelProcess for both starters, repeat a request to check Worker reuse, and assert responses are legal, stats are finite, requests are unchanged, and the worker stays inside its integration-test ceiling.
 
-- [ ] **Step 2: Run integration tests and confirm they fail because the model is missing**
+- [x] **Step 2: Run integration tests and confirm they fail because the model is missing**
 
 Run: $teamNode --test tests/team-contender-integration.test.js
 Expected: FAIL because team-contender-v1 is not registered.
 
-- [ ] **Step 3: Implement the model entry and registry manifest**
+- [x] **Step 3: Implement the model entry and registry manifest**
   - Load the AlphaZero v2 weights and open the tablebase once per Worker.
   - Keep dependencies inside models/ and list them, including all tablebase shards. Set the search deadline below budgetMs with a return reserve.
 
-- [ ] **Step 4: Run focused tests in the production Worker boundary**
+- [x] **Step 4: Run focused tests in the production Worker boundary**
 
 Run: $teamNode --test tests/team-contender.test.js tests/team-contender-integration.test.js tests/full-tablebase-model.test.js tests/competitive-baselines.test.js
 Expected: PASS; no worker permission denial, protocol error, illegal move, timeout, or request mutation.
 
-- [ ] **Step 5: Build the application and run the complete test suite**
+- [x] **Step 5: Build the application and run the complete test suite**
 
 Run: $teamNode scripts/build.mjs
 Expected: build succeeds.
@@ -175,7 +175,7 @@ Expected: build succeeds.
 Run: $teamNode --test tests/*.test.js
 Expected: all tests pass; any unrelated existing failure is reported by exact test name.
 
-- [ ] **Step 6: Commit the registered model after all checks pass**
+- [x] **Step 6: Commit the registered model after all checks pass**
 
 Run:
 ~~~powershell
