@@ -177,8 +177,8 @@ export function analyze(request, services = {}) {
     const inCheck = position.inCheck();
     // A non-draw oracle result that becomes repetition-uncertain must not tie
     // a certified draw: the side to move may still force its oracle result.
-    const stand = outcome ? outcome.outcome : policy(position, moves).value;
-    if (remaining <= 0) return stand;
+    const stand = inCheck ? null : outcome ? outcome.outcome : policy(position, moves).value;
+    if (remaining <= 0 && !inCheck) return stand;
     let best = inCheck ? -INF : stand;
     if (!inCheck) {
       if (stand >= beta) return stand;

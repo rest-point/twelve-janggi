@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyAction, createPosition, initialState, isLegalAction, legalActions } from '../src/engine.js';
+import { applyAction, createPosition, initialState, isInCheck, isLegalAction, legalActions } from '../src/engine.js';
 import { denseIndex, openFullTablebase } from '../models/full-tablebase-v2.mjs';
 import { FastPosition } from '../models/pvs-aspiration-rules-v1.mjs';
 import { actionCode } from '../models/pvs-aspiration-rules-v1.mjs';
@@ -98,6 +98,25 @@ test('unsupported material uses neural-guided fallback and only a proved win is 
   assert.ok(result.info.policyEvals > 0);
   assert.equal(result.info.provenWin, false, 'a DFPN disproof is not an opponent-win proof');
   assert.deepEqual(request, before);
+});
+
+test('quiescence searches legal evasions when check reaches its depth horizon', () => {
+  const state = initialState(0), actions = legalActions(state), checkingAction = { from: 5, to: 6 };
+  assert.equal(isLegalAction(state, checkingAction), true);
+  const checked = applyAction(state, checkingAction, false);
+  assert.equal(isInCheck(checked, checked.turn), true);
+  const evasionKeys = new Set(legalActions(checked).map(action => {
+    return new FastPosition(applyAction(checked, action, false)).key();
+  }));
+  const probedEvasions = new Set();
+  const request = { state, legalActions: actions, budgetMs: 200,
+    config: { maxTimeMs: 100, maxDepth: 1, quiescenceDepth: 0, maxNodes: 1000 } };
+  const result = analyze(request, mockServices({ probe: candidate => {
+    if (evasionKeys.has(candidate.key())) probedEvasions.add(candidate.key());
+    return 0;
+  } }));
+  assert.ok(isLegalAction(state, result.action));
+  assert.ok(probedEvasions.size > 0, 'the checked node must search a legal evasion before static evaluation');
 });
 
 test('the search chooses a quicker exact win even when policy ordering prefers a slower win', () => {

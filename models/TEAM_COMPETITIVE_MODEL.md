@@ -31,6 +31,8 @@ Two balanced 100-game batches completed and passed replay verification. Each use
 
 The contender had a 2,000 ms model cap in these batches. The opponents used their registered configurations: AlphaZero's 800 simulations and Packed PUCT's 360 ms cap. These are not equal-compute comparisons. Move-time means are across accepted contender moves (2,050 vs AlphaZero and 1,125 vs Packed PUCT); p95 and max are from the same accepted-move timing records. No model failures were recorded in the completed runs.
 
+All games began from the same initial position, so each 100-game result is a balanced repeated-start sample, not 100 independent positions.
+
 The initial position is tablebase-drawn, so a perfect tablebase opponent can hold a draw. The 4-game screen against it ended 0/4/0. The planned 100-game batches against `tablebase-minimax-reply-v2` and `lab-neural-v2` were stopped before completion after the requested scope narrowed to one model; their partial games are excluded and were not replay-verified. Do not read the completed matchup scores as guarantees against other opponents or positions.
 
 ### Reproducibility references
