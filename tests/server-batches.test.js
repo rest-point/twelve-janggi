@@ -15,6 +15,10 @@ import { createModelMatches } from '../server/model-matches.mjs';
 import { sha256 } from '../bench/common.mjs';
 
 const fake=()=>({ready:async()=>({elapsedMs:1}),think:async r=>({action:r.legalActions[0],elapsedMs:1}),close(){}});
+// This is a whole 100-game batch wait, not the referee's 60s per-move limit.
+// Supported Windows/Node 24 hosts can spend over 60s starting 200 supervisors.
+const realBatchWaitMs=Number(process.env.REAL_BATCH_TEST_WAIT_MS||180000);
+assert.ok(Number.isSafeInteger(realBatchWaitMs)&&realBatchWaitMs>=60000&&realBatchWaitMs<=600000,'Invalid real batch test wait');
 async function until(read,predicate,ms=15000){const end=Date.now()+ms;while(Date.now()<end){const value=await read();if(predicate(value))return value;await new Promise(r=>setTimeout(r,30));}assert.fail('Batch did not reach the expected persistent state');}
 const selection=()=>({modelA:'greedy-v1',modelB:'random-v1',requestId:randomUUID()});
 
@@ -26,14 +30,14 @@ test('production-sized real batches accumulate 100 then 200 games for either ord
     assert.equal(duplicate.data.batchId,one.data.batchId);assert.equal(f.db.prepare('SELECT count(*) n FROM model_matches').get().n,100);
     assert.equal((await a.call('/api/model-matches','POST',selection())).status,409);
     const id=one.data.id;
-    const hundred=await until(()=>f.app.models.detail(id),s=>s.recordedGames===100,60000);
+    const hundred=await until(()=>f.app.models.detail(id),s=>s.recordedGames===100,realBatchWaitMs);
     assert.equal(hundred.status,'completed');assert.equal(hundred.games.length,100);assert.equal(hundred.batches.length,1);
     const firstIds=hundred.games.map(g=>g.gameId);
     // Game indices append by insertion order even when the wall clock changes.
     f.db.prepare('UPDATE model_batches SET created_at=created_at+10000000').run();
     const second=await a.call('/api/model-matches','POST',{modelA:'random-v1',modelB:'greedy-v1',requestId:randomUUID()});
     assert.equal(second.status,202);assert.equal(second.data.id,id);assert.equal(second.data.expectedGames,200);
-    const done=await until(()=>f.app.models.detail(id),s=>s.recordedGames===200,60000);
+    const done=await until(()=>f.app.models.detail(id),s=>s.recordedGames===200,realBatchWaitMs);
     assert.equal(done.failedGames,0);assert.equal(done.games.length,200);assert.equal(done.batches.length,2);
     assert.deepEqual(done.games.slice(0,100).map(g=>g.gameId),firstIds);
     assert.equal((await a.call('/api/model-matches')).data.experiments.length,1);
@@ -59,7 +63,6 @@ test('production-sized real batches accumulate 100 then 200 games for either ord
     assert.equal((await a.call(`/api/model-matches/${id}/games/200`)).status,404);
   },false,{modelOptions:{batchSize:100}});
 });
-
 test('resuming a 100-game batch retains completed games and retries only interrupted jobs with new tokens',async()=>{
   let turns=0;const releases=[];
   await fixture(async f=>{
