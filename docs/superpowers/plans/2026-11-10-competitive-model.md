@@ -95,37 +95,37 @@ Expected: only the baseline, test, and approved docs are committed.
 - services provides tablebase.probe(position), tablebase.probeKey(key), scorePolicyValue(position, legalMoveCodes, seenCount), proveWin(position, attacker, limits), and now().
 - scorePolicyValue returns { value: finite number, priors: finite numbers aligned with legalMoveCodes }. A tablebase raw value of 1 is a draw, abs(raw) >= 256 is a win/loss for the side to move with distance abs(raw)-256, and raw 0 is unsupported. DFPN status is conclusive only when status is win.
 
-- [ ] **Step 1: Write failing tests for oracle values, coverage, and repetition precedence**
+- [x] **Step 1: Write failing tests for oracle values, coverage, and repetition precedence**
   - Test initialState(0) and initialState(1) classify as tablebase draws.
   - Test deterministic legal play including captures, hand drops, and promotion remains indexable by denseIndex.
   - Test known tablebase win/loss values map to the correct side-to-move result and preserve distance ordering.
   - Test a third occurrence is an official draw even where the history-free probe returns a win.
   - Test twice-seen prior keys prevent an uncertified tablebase win from being called certain.
 
-- [ ] **Step 2: Run the focused tests and confirm the missing search exports fail**
+- [x] **Step 2: Run the focused tests and confirm the missing search exports fail**
 
 Run: $teamNode --test tests/team-contender.test.js
 Expected: FAIL because analyze and tablebase-aware classification do not exist.
 
-- [ ] **Step 3: Implement the injected search API and exact-outcome handling**
+- [x] **Step 3: Implement the injected search API and exact-outcome handling**
   - Convert FastPosition keys and action codes consistently with the engine.
   - Apply actual winner/repetition checks before tablebase probes. Interpret 0 only as unsupported.
   - At every supported node, check engine terminal/repetition outcomes first, then score the exact tablebase outcome and distance for the side to move. Search tablebase-equivalent moves with PVS when history can turn a theoretical win/loss into a draw; use policy priors to order ties and value output only as a tie-breaker.
   - If a position is unsupported, use neural-guided PVS and bounded DFPN fallback. TT score keys must include the full repetition-count context, or skip caching for history-sensitive nodes. Treat DFPN as a forced win only when status is win.
   - Reserve at least 10 ms, retain the last completed search result, and fall back to the first legal request action if no iteration completes.
 
-- [ ] **Step 4: Add failing edge tests for fallback, budget, and both sides**
+- [x] **Step 4: Add failing edge tests for fallback, budget, and both sides**
   - Test unsupported material invokes fallback and never returns a tablebase draw.
   - Test very small budgets return a legal action and do not expose partial-depth/proof results as completed.
   - Test side 1 with a hand drop, a promotion edge, and king-safety constraints against engine legality.
   - Test request board, hands, positions, and legalActions remain unchanged.
 
-- [ ] **Step 5: Run the focused search tests and confirm they pass**
+- [x] **Step 5: Run the focused search tests and confirm they pass**
 
 Run: $teamNode --test tests/team-contender.test.js
 Expected: PASS with oracle, coverage, repetition, budget, side, and nonmutation cases.
 
-- [ ] **Step 6: Commit the isolated search component**
+- [x] **Step 6: Commit the isolated search component**
 
 Run:
 ~~~powershell
