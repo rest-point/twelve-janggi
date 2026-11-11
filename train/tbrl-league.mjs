@@ -5,14 +5,15 @@
 //   [features..., won, blunderNext, opponentIndex, plyFraction]
 // Usage:
 //   node train/tbrl-league.mjs --games 2000 --workers 14 --out data/r0.bin \
-//     [--weights models/tbrl-v1.bin --hidden 128,64] [--eps 0.2] [--opponents a,b,c]
+//     [--weights models/tbrl-v1.bin --hidden 128,64 [--trap]] [--eps 0.2] [--opponents a,b,c]
+// Rows always hold the base features; trap features are added by tbrl-augment.mjs.
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { parseArgs } from 'node:util';
 import { applyAction, initialState, legalActions, isLegalAction } from '../src/engine.js';
 import { FastPosition } from '../models/pvs-aspiration-rules-v1.mjs';
-import { FEATURES, openTable, classify, safeCandidates, createMlp, rng } from '../models/tbrl-core.mjs';
+import { FEATURES, TRAP, openTable, classify, safeCandidates, createMlp, candidateInput, rng } from '../models/tbrl-core.mjs';
 
 const ROOT = new URL('../', import.meta.url);
 export const DEFAULT_OPPONENTS = ['packed-gemm-puct-v2', 'azero-v2', 'azero-v1', 'stockjang-v1', 'team-mcts-v1',
@@ -32,7 +33,7 @@ function makePolicy(options) {
   let mlp = null;
   if (options.weights) {
     const bytes = readFileSync(options.weights);
-    mlp = createMlp(new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4), options.hidden);
+    mlp = createMlp(new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4), options.hidden, options.trap ? FEATURES + TRAP : FEATURES);
   }
   return (state, actions, random, explore) => {
     const children = classify(state, actions, table);
@@ -43,7 +44,7 @@ function makePolicy(options) {
     else if (mlp) {
       let best = -Infinity;
       for (const c of eligible) {
-        const s = mlp(c.features) + 1e-6 * random();
+        const s = mlp(candidateInput(state, c, table, options.trap)) + 1e-6 * random();
         if (s > best) { best = s; child = c; }
       }
     } else child = eligible[Math.floor(random() * eligible.length)];
@@ -115,12 +116,12 @@ async function worker() {
 async function main() {
   const { values } = parseArgs({ options: {
     games: { type: 'string', default: '200' }, workers: { type: 'string', default: '14' }, out: { type: 'string' },
-    weights: { type: 'string' }, hidden: { type: 'string', default: '128,64' }, eps: { type: 'string', default: '0.15' },
+    weights: { type: 'string' }, hidden: { type: 'string', default: '128,64' }, eps: { type: 'string', default: '0.15' }, trap: { type: 'boolean', default: false },
     opponents: { type: 'string' }, mix: { type: 'string' }, seed: { type: 'string', default: '1' }, log: { type: 'string' },
   } });
   if (!values.out) throw new Error('--out is required');
   const options = { weights: values.weights ? path.resolve(values.weights) : null, hidden: values.hidden.split(',').map(Number),
-    eps: Number(values.eps), opponents: values.opponents ? values.opponents.split(',') : DEFAULT_OPPONENTS };
+    eps: Number(values.eps), trap: values.trap, opponents: values.opponents ? values.opponents.split(',') : DEFAULT_OPPONENTS };
   const mix = values.mix ? values.mix.split(',').map(Number) : options.opponents.map(() => 1);
   const games = Number(values.games), seed = Number(values.seed);
   mkdirSync(path.dirname(path.resolve(values.out)), { recursive: true });

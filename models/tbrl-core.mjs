@@ -105,8 +105,8 @@ export function features(position, us, info, out = new Float32Array(FEATURES)) {
 // ---- tiny MLP ---------------------------------------------------------------
 // Layout per layer: weight [out][in] row-major, then bias [out]. ReLU hidden,
 // linear output (a logit for "we eventually win").
-export function mlpLayout(hidden) {
-  const sizes = [FEATURES, ...hidden, 1], layers = [];
+export function mlpLayout(hidden, inputs = FEATURES) {
+  const sizes = [inputs, ...hidden, 1], layers = [];
   let offset = 0;
   for (let i = 0; i + 1 < sizes.length; i++) {
     const w = offset; offset += sizes[i] * sizes[i + 1];
@@ -115,8 +115,8 @@ export function mlpLayout(hidden) {
   }
   return { layers, size: offset };
 }
-export function createMlp(weights, hidden) {
-  const { layers, size } = mlpLayout(hidden);
+export function createMlp(weights, hidden, inputs = FEATURES) {
+  const { layers, size } = mlpLayout(hidden, inputs);
   if (weights.length !== size || !weights.every(Number.isFinite)) throw new Error(`Invalid MLP weights (${weights.length} != ${size})`);
   const buffers = layers.map(l => new Float32Array(l.output));
   return function evaluate(x) {
@@ -241,6 +241,18 @@ export function positionFromFeatures(row) {
   position.counts = new Map();
   position._winner = null;
   return position;
+}
+
+// Network input for a safe candidate: base features, plus the 2-ply trap
+// features of the position after the move (with the real repetition history).
+export function candidateInput(state, child, table, trap) {
+  if (!trap) return child.features;
+  const position = new FastPosition(state);
+  position.make(child.move);
+  const input = new Float32Array(FEATURES + TRAP);
+  input.set(child.features);
+  input.set(trapFeatures(position, table), FEATURES);
+  return input;
 }
 
 // Filter to the safe candidate set. Returns { tier, eligible }.

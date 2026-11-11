@@ -15,6 +15,7 @@ import torch.nn as nn
 
 FEATURES = 134
 COLUMNS = FEATURES + 4
+TRAP = 8
 
 p = argparse.ArgumentParser()
 p.add_argument('--data', nargs='+', required=True)
@@ -26,21 +27,26 @@ p.add_argument('--batch', type=int, default=4096)
 p.add_argument('--lr', type=float, default=2e-3)
 p.add_argument('--aux', type=float, default=0.5)
 p.add_argument('--seed', type=int, default=0)
+p.add_argument('--trap', action='store_true', help='append <data>.trap.bin features (8 per row)')
 args = p.parse_args()
+INPUTS = FEATURES + (TRAP if args.trap else 0)
 torch.manual_seed(args.seed); np.random.seed(args.seed)
 
 chunks, weights = [], []
 for i, path in enumerate(args.data):
     a = np.fromfile(path, dtype=np.float32).reshape(-1, COLUMNS)
+    if args.trap:
+        t = np.fromfile(path + '.trap.bin', dtype=np.float32).reshape(len(a), TRAP)
+        a = np.concatenate([a[:, :FEATURES], t, a[:, FEATURES:]], axis=1)
     chunks.append(a)
     weights.append(np.full(len(a), args.decay ** (len(args.data) - 1 - i), dtype=np.float32))
 data = np.concatenate(chunks); w = np.concatenate(weights)
-print(f'rows {len(data)}  win-rate {data[:, FEATURES].mean():.3f}  blunder-rate {data[:, FEATURES + 1].mean():.3f}')
+print(f'rows {len(data)}  inputs {INPUTS}  win-rate {data[:, INPUTS].mean():.3f}  blunder-rate {data[:, INPUTS + 1].mean():.3f}')
 
 dev = torch.device('cuda')
-X = torch.tensor(data[:, :FEATURES], device=dev)
-Y = torch.tensor(data[:, FEATURES], device=dev)
-B = torch.tensor(data[:, FEATURES + 1], device=dev)
+X = torch.tensor(data[:, :INPUTS], device=dev)
+Y = torch.tensor(data[:, INPUTS], device=dev)
+B = torch.tensor(data[:, INPUTS + 1], device=dev)
 W = torch.tensor(w, device=dev)
 n = len(X)
 perm = torch.randperm(n, device=dev)
@@ -50,7 +56,7 @@ hidden = [int(h) for h in args.hidden.split(',')]
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        layers, last = [], FEATURES
+        layers, last = [], INPUTS
         for h in hidden:
             layers += [nn.Linear(last, h), nn.ReLU()]; last = h
         self.body = nn.Sequential(*layers)
@@ -96,6 +102,6 @@ for m in linears:
     parts.append(m.bias.detach().cpu().numpy().astype(np.float32).reshape(-1))
 flat = np.concatenate(parts)
 flat.tofile(args.out)
-json.dump({'hidden': hidden, 'rows': int(n), 'valLoss': best, 'params': int(flat.size), 'data': args.data},
+json.dump({'hidden': hidden, 'inputs': INPUTS, 'rows': int(n), 'valLoss': best, 'params': int(flat.size), 'data': args.data},
           open(args.out + '.json', 'w'), indent=2)
 print(f'saved {args.out} ({flat.size} floats), best val-loss {best:.4f}')
