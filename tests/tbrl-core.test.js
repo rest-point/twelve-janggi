@@ -66,6 +66,27 @@ test('safe candidates never contain a move that loses a drawn position', () => {
   } finally { table.close(); reference.close(); }
 });
 
+test('tbrl models load and answer through the permission-restricted web ModelProcess', async () => {
+  const { loadRegistry } = await import('../bench/common.mjs');
+  const { ModelProcess } = await import('../server/model-process.mjs');
+  const { isLegalAction } = await import('../src/engine.js');
+  for (const model of (await loadRegistry()).filter(m => m.id.startsWith('tbrl-'))) {
+    const process = new ModelProcess(model);
+    try {
+      assert.equal((await process.ready()).error, undefined, model.id + ' startup');
+      let state = initialState(1);
+      for (let i = 0; i < 6 && state.winner === null; i++) {
+        const reply = await process.think({ protocol: 'js-v1', requestId: `${model.id}-${i}`, ruleset: state.ruleset, state,
+          legalActions: legalActions(state), budgetMs: 1000, seed: i, config: model.config }, 2000);
+        assert.equal(reply.error, undefined, model.id + ' think');
+        assert.ok(isLegalAction(state, reply.action));
+        state = applyAction(state, reply.action, false);
+        if (state.winner === null) state = applyAction(state, legalActions(state)[0], false);
+      }
+    } finally { process.close(); }
+  }
+});
+
 test('tbrl-v2 returns legal moves that never worsen the proven result', async () => {
   const { analyze } = await import('../models/tbrl-v2.mjs');
   const reference = openFullTablebase(), random = rng(21);
