@@ -65,3 +65,30 @@ test('safe candidates never contain a move that loses a drawn position', () => {
     }
   } finally { table.close(); reference.close(); }
 });
+
+test('tbrl-v2 returns legal moves that never worsen the proven result', async () => {
+  const { analyze } = await import('../models/tbrl-v2.mjs');
+  const reference = openFullTablebase(), random = rng(21);
+  try {
+    let checked = 0;
+    for (let g = 0; g < 20; g++) {
+      let state = initialState(g % 2);
+      while (state.winner === null && state.ply < 80) {
+        const actions = legalActions(state);
+        const root = reference.probe(new FastPosition(state));
+        const { action, info } = analyze({ state, legalActions: actions, seed: g * 1000 + state.ply, config: { hidden: [128, 64], trap: false } });
+        assert.ok(actions.some(a => actionCode(a) === actionCode(action)), 'legal');
+        assert.ok(info.searchMs < 1000);
+        const next = applyAction(state, action, false);
+        if (next.winner === null) {
+          const after = reference.probe(new FastPosition(next)); // opponent's view
+          if (root === 1) assert.ok(after === 1 || after <= -256, 'draw kept');
+          if (root >= 256) assert.ok(after <= -256, 'win kept');
+        } else if (root === 1 || root >= 256) assert.notEqual(next.winner, 1 - state.turn);
+        checked++;
+        state = applyAction(state, actions[Math.floor(random() * actions.length)], false);
+      }
+    }
+    assert.ok(checked > 200);
+  } finally { reference.close(); }
+});
