@@ -27,12 +27,14 @@ export async function createModelCatalog(db) {
       }
       const existing=db.prepare('SELECT digest FROM model_versions WHERE id=?').get(id);
       requireThat(!existing||existing.digest===digest,503,'모델 실행 버전의 해시가 일치하지 않습니다.');
-      const resolved={...m,id,registryId:m.id};approved.push(resolved);
+      // Display names can change independently of the registered artifact.
+      const name=m.id==='team-contender-v2'?'장군: JANGGUN':m.name;
+      const resolved={...m,id,registryId:m.id};approved.push({...resolved,name});
       if(!existing){
-        db.prepare('INSERT OR IGNORE INTO models VALUES(?,?)').run(modelId,m.name);
+        db.prepare('INSERT OR IGNORE INTO models VALUES(?,?)').run(modelId,name);
         const {entryPath,...manifest}=resolved;
         db.prepare('INSERT INTO model_versions VALUES(?,?,?,?,?,?,?)').run(id,modelId,id,digest,JSON.stringify(manifest),JSON.stringify(environment),Date.now());
-        const playerId=randomUUID();db.prepare('INSERT INTO users VALUES(?,?,?,?,?,?)').run(playerId,m.name,`model:${id}`,'!model-no-password','user',Date.now());
+        const playerId=randomUUID();db.prepare('INSERT INTO users VALUES(?,?,?,?,?,?)').run(playerId,name,`model:${id}`,'!model-no-password','user',Date.now());
         db.prepare('INSERT INTO model_players VALUES(?,?)').run(playerId,id);
       }
     }

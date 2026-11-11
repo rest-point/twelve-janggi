@@ -1,4 +1,4 @@
-# Team Contender v2
+# 장군: JANGGUN
 
 `team-contender-v2` is the one new model retained on branch `codex/competitive-model`. It is a candidate for Twelve-Janggi strict v2; these results do not establish that it is universally stronger.
 
