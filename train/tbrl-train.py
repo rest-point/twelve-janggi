@@ -38,9 +38,26 @@ for i, path in enumerate(args.data):
     if args.trap:
         t = np.fromfile(path + '.trap.bin', dtype=np.float32).reshape(len(a), TRAP)
         a = np.concatenate([a[:, :FEATURES], t, a[:, FEATURES:]], axis=1)
-    chunks.append(a)
-    weights.append(np.full(len(a), args.decay ** (len(args.data) - 1 - i), dtype=np.float32))
+    fw = np.full(len(a), args.decay ** (len(args.data) - 1 - i), dtype=np.float32)
+    # Off-policy correction: the final outcome only measures a decision when
+    # every later decision of the same game followed the greedy policy.
+    # Games are contiguous; a new game starts when the ply fraction drops.
+    meta = a[:, INPUTS + 2]; ply = a[:, INPUTS + 3]
+    explored = meta >= 64
+    a[:, INPUTS + 2] = meta % 64
+    later_explored = False
+    for r in range(len(a) - 1, -1, -1):
+        if r + 1 < len(a) and ply[r + 1] <= ply[r]:
+            later_explored = False  # row r is the last decision of its game
+        if later_explored:
+            fw[r] = 0
+        later_explored = later_explored or explored[r]
+    if explored.any():
+        print(f'{path}: {explored.sum()} exploratory rows, {int((fw == 0).sum())} rows masked')
+    chunks.append(a); weights.append(fw)
 data = np.concatenate(chunks); w = np.concatenate(weights)
+keep = w > 0
+data, w = data[keep], w[keep]
 print(f'rows {len(data)}  inputs {INPUTS}  win-rate {data[:, INPUTS].mean():.3f}  blunder-rate {data[:, INPUTS + 1].mean():.3f}')
 
 dev = torch.device('cuda')

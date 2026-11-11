@@ -2,7 +2,7 @@
 // Plays the tablebase-safe policy (optionally guided by an MLP value network,
 // with epsilon exploration) against registered league models using their
 // registry configs, and records one row per decision point:
-//   [features..., won, blunderNext, opponentIndex, plyFraction]
+//   [features..., won, blunderNext, opponentIndex (+64 if the move was exploratory), plyFraction]
 // Usage:
 //   node train/tbrl-league.mjs --games 2000 --workers 14 --out data/r0.bin \
 //     [--weights models/tbrl-v1.bin --hidden 128,64 [--trap]] [--eps 0.2] [--opponents a,b,c]
@@ -39,8 +39,8 @@ function makePolicy(options) {
     const children = classify(state, actions, table);
     const { tier, eligible } = safeCandidates(children);
     if (eligible.length === 1) return { child: eligible[0], decision: false, tier };
-    let child;
-    if (explore && random() < options.eps) child = eligible[Math.floor(random() * eligible.length)];
+    let child, explored = false;
+    if (explore && random() < options.eps) { child = eligible[Math.floor(random() * eligible.length)]; explored = true; }
     else if (mlp) {
       let best = -Infinity;
       for (const c of eligible) {
@@ -48,7 +48,7 @@ function makePolicy(options) {
         if (s > best) { best = s; child = c; }
       }
     } else child = eligible[Math.floor(random() * eligible.length)];
-    return { child, decision: true, tier };
+    return { child, decision: true, tier, explored };
   };
 }
 
@@ -72,9 +72,9 @@ async function worker() {
         const actions = legalActions(state);
         if (state.turn === us) {
           const t = performance.now();
-          const { child, decision } = policy(state, actions, random, true);
+          const { child, decision, explored } = policy(state, actions, random, true);
           times.push(performance.now() - t);
-          if (decision) { decisions.push({ features: Float32Array.from(child.features), ply: state.ply, value: child.value }); blunderPending = decisions.length - 1; }
+          if (decision) { decisions.push({ features: Float32Array.from(child.features), ply: state.ply, value: child.value, explored }); blunderPending = decisions.length - 1; }
           else blunderPending = -1;
           state = applyAction(state, child.action, false);
         } else {
@@ -103,7 +103,7 @@ async function worker() {
       out.set(d.features, i * COLUMNS);
       out[i * COLUMNS + FEATURES] = won;
       out[i * COLUMNS + FEATURES + 1] = d.blunder ?? 0;
-      out[i * COLUMNS + FEATURES + 2] = job.opponent;
+      out[i * COLUMNS + FEATURES + 2] = job.opponent + (d.explored ? 64 : 0);
       out[i * COLUMNS + FEATURES + 3] = d.ply / 256;
     });
     parentPort.postMessage({ index: job.index, opponent: job.opponent, us, first, winner, plies: state.ply, failure,
@@ -116,7 +116,7 @@ async function worker() {
 async function main() {
   const { values } = parseArgs({ options: {
     games: { type: 'string', default: '200' }, workers: { type: 'string', default: '14' }, out: { type: 'string' },
-    weights: { type: 'string' }, hidden: { type: 'string', default: '128,64' }, eps: { type: 'string', default: '0.15' }, trap: { type: 'boolean', default: false },
+    weights: { type: 'string' }, hidden: { type: 'string', default: '128,64' }, eps: { type: 'string', default: '0.15' }, trap: { type: 'boolean', default: false }, as: { type: 'string', default: 'any' },
     opponents: { type: 'string' }, mix: { type: 'string' }, seed: { type: 'string', default: '1' }, log: { type: 'string' },
   } });
   if (!values.out) throw new Error('--out is required');
@@ -131,7 +131,8 @@ async function main() {
   for (let i = 0; i < games; i++) {
     let r = random() * total, opponent = 0;
     while (r >= mix[opponent]) r -= mix[opponent++];
-    jobs.push({ index: i, opponent, us: i % 2, first: (i >> 1) % 2, seed: (seed * 1000003 + i * 7477) >>> 0 });
+    const us = i % 2, first = values.as === 'second' ? 1 - us : values.as === 'first' ? us : (i >> 1) % 2;
+    jobs.push({ index: i, opponent, us, first, seed: (seed * 1000003 + i * 7477) >>> 0 });
   }
   const stats = options.opponents.map(id => ({ id, games: 0, wins: 0, draws: 0, losses: 0, failures: 0, asFirst: [0, 0], maxMs: 0, meanMs: 0 }));
   let next = 0, done = 0, rows = 0;
