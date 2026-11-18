@@ -257,7 +257,3 @@ git log -1 --oneline
 git push -u origin codex/competitive-model
 ~~~
 Expected: report committed, clean branch, commit based on origin/temp, and matching local/remote branch heads. Push only after review and verification pass.
-
-
-
-

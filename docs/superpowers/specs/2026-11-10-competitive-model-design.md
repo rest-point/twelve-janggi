@@ -49,4 +49,3 @@ Use first-move games with balanced sides and starting turn, fixed seed, and the 
 - Exact interaction between tablebase answers, AlphaZero leaf values, and DFPN results.
 - Whether `lab-neural-v2` can be added as a benchmark-only registry entry with its minimal required files.
 - Search constants selected within the 360 ms budget using the screen results.
-
