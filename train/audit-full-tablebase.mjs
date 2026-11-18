@@ -3,15 +3,17 @@ import { DatabaseSync } from 'node:sqlite';
 import { applyAction, legalActions, positionKey } from '../src/engine.js';
 import { keyOf, readBatch } from './verify-full-tablebase.mjs';
 
-const [exe, table, database, model = 'tablebase-minimax-reply-v1', opponent = 'azero-v2'] = process.argv.slice(2);
+const [exe, table, database, model = 'tablebase-minimax-reply-v2', opponent = 'azero-v2'] = process.argv.slice(2);
 if (!database) throw new Error('Usage: node train/audit-full-tablebase.mjs EXE TABLE DATABASE [MODEL OPPONENT]');
 const db = new DatabaseSync(database, { readOnly: true });
 let rows;
 try {
-  rows = db.prepare(`SELECT va.legacy_registry_id a, m.a_side, g.initial_state, g.current_state, g.result
-    FROM model_matches m JOIN model_versions va ON va.id=m.model_a JOIN model_versions vb ON vb.id=m.model_b
-    JOIN games g ON g.id=m.game_id WHERE g.result IN ('0','1') AND
-    ((va.legacy_registry_id=? AND vb.legacy_registry_id=?) OR (vb.legacy_registry_id=? AND va.legacy_registry_id=?))`)
+  rows = db.prepare(`WITH versions AS (
+      SELECT id, coalesce(json_extract(manifest,'$.registryId'), legacy_registry_id) AS registry_id FROM model_versions
+    ) SELECT va.registry_id a, m.a_side, g.initial_state, g.current_state, g.result
+    FROM model_matches m JOIN versions va ON va.id=m.model_a JOIN versions vb ON vb.id=m.model_b
+    JOIN games g ON g.id=m.game_id WHERE m.status='completed' AND g.result IN ('0','1') AND
+    ((va.registry_id=? AND vb.registry_id=?) OR (vb.registry_id=? AND va.registry_id=?))`)
     .all(model, opponent, model, opponent);
 } finally { db.close(); }
 

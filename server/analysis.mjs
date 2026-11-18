@@ -15,7 +15,7 @@ export function createAnalysis({ getModel, clientFactory = model => new ModelPro
       requireThat(Object.keys(body).every(k => ['modelId', 'position', 'actions', 'linePlies'].includes(k)), 422, '지원하지 않는 분석 설정입니다.');
       requireThat(typeof body.modelId === 'string', 422, '분석 모델을 선택하세요.');
       const model = getModel(body.modelId);
-      const maxPly = ['azero-v1', 'azero-v2'].includes(model.registryId || model.id) ? 256 : Infinity;
+      const maxPly = (model.registryId || model.id) === 'azero-v2' ? 256 : Infinity;
       const linePlies = body.linePlies ?? 3;
       requireThat(Number.isInteger(linePlies) && linePlies >= 1 && linePlies <= 5, 422, '분석 수는 1~5수여야 합니다.');
       const actions = body.actions ?? [];

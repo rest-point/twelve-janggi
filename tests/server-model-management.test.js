@@ -95,7 +95,8 @@ test('retired models are unavailable and approved models start with blank introd
     const a=f.client();await a.enter();
     const models=(await a.call('/api/models')).data.models;
     const ids=new Set(models.map(model=>model.registryId));
-    const retired=['pvs-aspiration-v1','pv-puct-dfpn-v1','batch-puct-dfpn-v1','packed-gemm-puct-v1','tablebase-minimax-reply-v1'];
+    const retired=['pvs-aspiration-v1','pv-puct-dfpn-v1','batch-puct-dfpn-v1','packed-gemm-puct-v1','tablebase-minimax-reply-v1',
+      'team-greedy-v1','team-minimax-v1','azero-v1','tbrl-v1'];
     for(const id of retired) assert.equal(ids.has(id),false);
     assert.ok(ids.has('tablebase-minimax-reply-v2')&&ids.has('packed-gemm-puct-v2'));
     for(const {description} of models){

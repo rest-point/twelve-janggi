@@ -11,6 +11,8 @@ export async function createModelCatalog(db) {
   const sourceFiles=['src/engine.js','bench/common.mjs','bench/model-worker.mjs','server/games.mjs','server/model-service.mjs','server/model-matches.mjs','server/model-process.mjs','server/model-host.mjs','package-lock.json'];
   const environment={node:process.version,platform:os.platform(),release:os.release(),arch:os.arch(),
     hashes:Object.fromEntries(await Promise.all(sourceFiles.map(async f=>[f,sha256(await readFile(path.join(ROOT,f)))])))};
+  const nameCounts=new Map();
+  for(const {name} of registry)nameCounts.set(name,(nameCounts.get(name)??0)+1);
   const approved=[];
   transaction(db,()=>{
     for(const m of registry){
@@ -28,7 +30,9 @@ export async function createModelCatalog(db) {
       const existing=db.prepare('SELECT digest FROM model_versions WHERE id=?').get(id);
       requireThat(!existing||existing.digest===digest,503,'모델 실행 버전의 해시가 일치하지 않습니다.');
       // Display names can change independently of the registered artifact.
-      const name=m.id==='team-contender-v2'?'장군: JANGGUN':m.name;
+      let name=m.name;
+      if(m.id==='team-contender-v2')name='장군: JANGGUN';
+      else if(nameCounts.get(name)>1)name=`${name} (${m.id})`;
       const resolved={...m,id,registryId:m.id};approved.push({...resolved,name});
       if(!existing){
         db.prepare('INSERT OR IGNORE INTO models VALUES(?,?)').run(modelId,name);

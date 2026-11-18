@@ -8,7 +8,9 @@
 
 **Tech Stack:** Node.js >=24.7, JavaScript ES modules, existing Node test runner and evaluate/replay-verify scripts. No new packages.
 
-**Spec:** docs/superpowers/specs/2026-11-10-competitive-model-design.md
+**Spec:** [Initial design](../specs/2026-11-10-competitive-model-design.md)
+
+This plan preserves the original development steps. The final scope update below supersedes those steps where they differ. The [current model report](../../models_report.md) covers the registered models and their tunnel evaluation.
 
 ## Final scope update (2026-11-11)
 

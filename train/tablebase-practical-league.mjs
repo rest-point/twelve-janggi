@@ -7,14 +7,14 @@ import { FastPosition } from '../models/pvs-aspiration-rules-v1.mjs';
 import { openFullTablebase, denseIndex } from '../models/full-tablebase-v2.mjs';
 import { FEATURES, certifiedWin, createPracticalRanker, drawOptions } from '../models/tablebase-practical-ranker-v1.mjs';
 import { think as baseline } from '../models/tablebase-minimax-reply-v2.mjs';
-import { think as greedy } from '../models/team-greedy-v1.mjs';
+import { think as greedy } from '../models/greedy.mjs';
 import { think as stockjang } from '../models/stockjang-v1.mjs';
 import { think as packed } from '../models/packed-gemm-puct-v2.mjs';
-import { think as minimax } from '../models/team-minimax-v1.mjs';
+import { think as minimax } from '../models/minimax.mjs';
 import { think as mcts } from '../models/team-mcts-v1.mjs';
 
 const training = [
-  ['greedy', greedy, { thinkMs: 100 }],
+  ['greedy', greedy, {}],
   ['stockjang', stockjang, { maxNodes: 2400, maxDepth: 8, maxTimeMs: 100 }],
   ['packed', packed, { simulations: 192, maxTimeMs: 100, rootProofNodes: 400, leafProofNodes: 8 }],
 ];
@@ -22,7 +22,7 @@ const validation = [
   ['stockjang', stockjang, { maxNodes: 40000, maxTimeMs: 360 }],
   ['packed', packed, { simulations: 3200, maxTimeMs: 360, rootProofNodes: 16000, leafProofNodes: 60,
     replyProofNodes: 800, rootCoverage: 2, cInitRoot: 0.9, rootValuePenalty: 0.15 }],
-  ['team-minimax', minimax, { depth: 5, thinkMs: 360 }],
+  ['minimax', minimax, { difficulty: 'normal' }],
   ['team-mcts', mcts, { maxSimulations: 1000, rolloutPlies: 256, thinkMs: 360 }],
 ];
 

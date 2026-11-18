@@ -2,6 +2,8 @@
 
 Date: 2026-11-10
 
+This is the initial design record. For later scope decisions, see the [implementation plan's final scope update](../plans/2026-11-10-competitive-model.md#final-scope-update-2026-11-11). For the current model catalog and evaluation, see the [model report](../../models_report.md).
+
 ## Intent
 
 Add a new team-authored model to the GitHub repository that can compete with the strongest models currently published on GitHub. Preserve all existing model artifacts and benchmark each opponent under reproducible conditions. A win is an empirical outcome, not a guarantee of universal superiority.

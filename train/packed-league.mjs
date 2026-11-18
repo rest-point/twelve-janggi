@@ -10,10 +10,10 @@ import { createPackedEvaluator } from '../models/packed-gemm-policy-value-v2.mjs
 import { searchBatch } from '../models/packed-puct-search-v2.mjs';
 import { loadTablebase, searchWithTablebase } from '../models/packed-tablebase-v1.mjs';
 import { think as champion } from '../models/azero-v2.mjs';
-import { think as classical } from '../models/pvs-aspiration-v1.mjs';
-import { think as scalar } from '../models/pv-puct-dfpn-v1.mjs';
-import { think as batch } from '../models/batch-puct-dfpn-v1.mjs';
-import { think as packed } from '../models/packed-gemm-puct-v1.mjs';
+import { think as classical } from '../models/stockjang-v1.mjs';
+import { think as mcts } from '../models/team-mcts-v1.mjs';
+import { think as minimax } from '../models/minimax.mjs';
+import { think as packed } from '../models/packed-gemm-puct-v2.mjs';
 import { backward } from './backprop.mjs';
 
 function readWeights(file) {
@@ -52,9 +52,9 @@ function gameRunner(options, weights, tablebaseBytes) {
   const tablebase = tablebaseBytes ? loadTablebase(tablebaseBytes) : null;
   const pool = [
     ['champion', champion, { sims: 800 }],
-    ['pvs', classical, { maxDepth: 9, maxNodes: 4500, quiescenceDepth: 3, maxTimeMs: 55000 }],
-    ['scalar', scalar, { simulations: 192, rootProofNodes: 1200, leafProofNodes: 16, maxTimeMs: 55000 }],
-    ['batch', batch, { simulations: 192, rootProofNodes: 1200, leafProofNodes: 16, maxTimeMs: 55000 }],
+    ['stockjang', classical, { maxDepth: 9, maxNodes: 4500, quiescenceDepth: 3, maxTimeMs: 1500 }],
+    ['mcts', mcts, { maxSimulations: 192, rolloutPlies: 256, thinkMs: 500 }],
+    ['minimax', minimax, { difficulty: 'normal' }],
     ['packed', packed, { simulations: 192, rootProofNodes: 1200, leafProofNodes: 16, maxTimeMs: 55000 }],
   ];
   return index => {
@@ -212,7 +212,10 @@ if (!isMainThread) {
   const sources = Object.fromEntries([
     'train/packed-league.mjs', 'train/backprop.mjs', 'src/engine.js', 'bench/common.mjs',
     'models/packed-puct-search-v2.mjs', 'models/packed-gemm-policy-value-v2.mjs', 'models/azero-v2.bin',
-    ...(tablebaseBytes ? ['models/packed-tablebase-v1.mjs', 'models/strict-tablebase-v1.mjs', 'models/pvs-aspiration-rules-v1.mjs'] : []),
+    'models/azero-v2.mjs', 'models/azero-core.mjs', 'models/stockjang-v1.mjs', 'models/team-mcts-v1.mjs',
+    'models/team-search-common.mjs', 'models/minimax.mjs', 'models/packed-gemm-puct-v2.mjs', 'models/packed-gemm-puct-v2.bin',
+    'models/dfpn-proof-v1.mjs', 'models/pvs-aspiration-rules-v1.mjs',
+    ...(tablebaseBytes ? ['models/packed-tablebase-v1.mjs', 'models/strict-tablebase-v1.mjs'] : []),
   ].map(file => [file, sha256(readFileSync(file))]));
   const replay = values.replay ? values.replay.split(',').map(file => {
     const bytes = readFileSync(file);
